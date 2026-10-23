@@ -1,0 +1,1749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F1F5F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1920" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Revision Room">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="config.js"></script>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Revision Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one calm column. Library of lessons -> a lesson's four exercise tiles -> one exercise at a time. */
+:root{
+  --bg:#F1F5F8; --surface:#FFFFFF; --ink:#13212B; --muted:#586873; --line:#D6DFE6;
+  --accent:#0E6B66; --accent-ink:#FFFFFF; --tint:#E2F0EE;
+  --mark:#FFD84D; --mark-ink:#13212B;
+  --good:#17703D; --good-bg:#E1F3E8; --bad:#B3261E; --bad-bg:#FBE6E3;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1920; --surface:#16252E; --ink:#E7EDF1; --muted:#9AADB9; --line:#2A3D49;
+    --accent:#52C4BA; --accent-ink:#052321; --tint:#17353A;
+    --mark:#E9C444; --mark-ink:#13212B;
+    --good:#6FD596; --good-bg:#173628; --bad:#FF9188; --bad-bg:#3C1F1D;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1920; --surface:#16252E; --ink:#E7EDF1; --muted:#9AADB9; --line:#2A3D49;
+  --accent:#52C4BA; --accent-ink:#052321; --tint:#17353A;
+  --mark:#E9C444; --mark-ink:#13212B;
+  --good:#6FD596; --good-bg:#173628; --bad:#FF9188; --bad-bg:#3C1F1D;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding-inline:16px}
+.wrap{max-width:640px;margin:0 auto;padding-block:28px 64px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,.display{font-family:var(--display);letter-spacing:-.02em}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+.eyebrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(32px,8vw,46px);line-height:1.08;margin:0 0 12px;font-weight:700;text-wrap:balance;overflow-wrap:anywhere}
+.hl{background:linear-gradient(transparent 60%,var(--mark) 60% 92%,transparent 92%);padding:0 .12em;margin-left:-.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+:root[data-theme="dark"] .hl{background:linear-gradient(transparent 60%,color-mix(in srgb,var(--mark) 55%,transparent) 60% 92%,transparent 92%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hl{background:linear-gradient(transparent 60%,color-mix(in srgb,var(--mark) 55%,transparent) 60% 92%,transparent 92%)}}
+.sub{margin:0;color:var(--muted);max-width:52ch}
+
+/* library */
+.drop{display:grid;gap:4px;margin-top:26px;padding:26px 20px;background:var(--surface);border:2px dashed var(--line);border-radius:16px;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over,.drop:focus-within{border-color:var(--accent)}
+.drop.over{background:var(--tint)}
+.dt{font:700 22px/1.2 var(--display);letter-spacing:-.01em}
+.dd{color:var(--muted);font-size:15px}
+.msg:not(:empty){margin:14px 0 0;padding:11px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:15px;white-space:pre-line}
+.msg.good{background:var(--good-bg);border-color:transparent}
+.msg.bad{background:var(--bad-bg);border-color:transparent}
+.warn{margin:14px 0 0;padding:11px 14px;border-radius:12px;background:var(--bad-bg);font-size:14px}
+.label{margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.lessons{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.lesson{display:flex;gap:12px 16px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.lm{flex:1 1 200px;min-width:0;display:grid;gap:2px}
+.lt{font:700 19px/1.25 var(--display);letter-spacing:-.01em;overflow-wrap:anywhere}
+.lc{color:var(--muted);font-size:14px}
+.la{display:flex;flex-wrap:wrap;gap:8px;flex:none}
+.sec{margin-top:30px}
+.mon{margin-top:14px}
+.mon>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 4px;cursor:pointer;font:700 18px var(--display);letter-spacing:-.01em}
+.mon>summary::-webkit-details-marker{display:none}
+.mon>summary::after{content:'';flex:none;width:9px;height:9px;margin-left:4px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s}
+.mon[open]>summary::after{transform:rotate(-135deg)}
+.mon .mc{margin-left:auto;font:500 14px var(--body);color:var(--muted)}
+.mon>.lessons{margin-top:6px}
+.how{margin-top:30px}
+.how h2{font-size:21px;margin:0 0 6px}
+.how p{margin:0 0 14px;color:var(--muted);max-width:56ch}
+.mini{overflow-x:auto;margin-bottom:16px}
+.mini table{border-collapse:collapse;width:100%;font-size:15px;background:var(--surface)}
+.mini th,.mini td{border:1px solid var(--line);padding:7px 12px;text-align:left}
+.mini th{color:var(--muted);font-weight:600;font-size:13px}
+.brand{display:flex;align-items:center;gap:8px;margin:0 0 14px;font:600 13px var(--body);letter-spacing:.01em;color:var(--accent)}
+.brand{text-decoration:none;width:fit-content}
+.brand:hover{text-decoration:underline}
+.brand .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--mark)}
+.uisel{margin-left:auto;min-height:34px;padding:0 26px 0 10px;font:600 13px var(--body);letter-spacing:0;text-transform:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;cursor:pointer}
+.pick{margin-top:22px}
+.pick .seg{margin-top:8px}
+.hint{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.yt{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;margin-top:6px}
+.yt iframe,.yt>div{position:absolute;inset:0;width:100%;height:100%}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.ctl .count{margin-left:auto}
+.btn.on,.btn.ghost.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mks{max-width:100%}.mk{min-width:0}
+.mks{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.mk{display:flex;gap:8px;align-items:center}
+.mk input{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.mk .ck{flex:1;min-width:0;overflow-wrap:anywhere}
+.chip{flex:none;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--accent);font-weight:600;cursor:pointer}
+.x{flex:none;width:40px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:20px;cursor:pointer}
+.fb{display:grid;gap:14px;margin-top:18px}
+.fb label{display:grid;gap:6px;font-size:14px;font-weight:600}
+.fb input,.fb textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%}
+.fb textarea{min-height:140px;resize:vertical}
+.fb .trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.foot{margin:28px 0 0;font-size:13px;color:var(--muted)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:28px}
+.tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:16px;min-height:132px;background:var(--surface);border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .15s,transform .15s}
+.tile:hover:not(:disabled){border-color:var(--accent)}
+.tile:active:not(:disabled){transform:scale(.985)}
+.tile:disabled{opacity:.5;cursor:default}
+.tn{font:700 21px/1.15 var(--display);letter-spacing:-.01em;overflow-wrap:anywhere}
+.tc{color:var(--muted);font-size:14px}
+.tl{margin-top:auto;padding-top:14px;font-size:13px;font-weight:600;color:var(--accent)}
+
+/* session chrome */
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:12px}
+.link{background:none;border:0;padding:8px 0;color:var(--accent);font-weight:600;cursor:pointer;text-align:left}
+.link.small{font-size:14px;font-weight:500;color:var(--muted);margin-top:14px;display:block}
+.count{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:26px}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.hint{margin:12px 0 0;color:var(--muted);font-size:14px}
+
+/* buttons */
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.btn{flex:1 1 150px;min-height:50px;padding:0 20px;border-radius:12px;border:1px solid transparent;font-weight:600;cursor:pointer}
+.btn.sm{flex:none;min-height:42px;padding:0 16px;font-size:15px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--surface);border-color:var(--line)}
+.btn.armed{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+
+/* flashcard */
+.flash{display:flex;flex-direction:column;justify-content:center;gap:14px;width:100%;min-height:290px;padding:44px 24px 28px;position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;cursor:pointer}
+.flash .side{position:absolute;top:16px;left:20px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.flash .face{font:700 clamp(24px,6vw,30px)/1.25 var(--display);letter-spacing:-.01em;animation:pop .18s ease;overflow-wrap:anywhere}
+.flash .face.back{color:var(--accent)}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* gap fill */
+.sentence{font-size:clamp(19px,4.8vw,23px);line-height:2.3;margin:0}
+input.gap{font:inherit;color:var(--ink);text-align:center;background:var(--tint);border:0;border-bottom:2px solid var(--muted);border-radius:6px 6px 0 0;padding:0 6px;margin:0 3px;max-width:100%;min-width:3.4em}
+input.gap:focus{outline:none;border-bottom-color:var(--accent);background:var(--surface);box-shadow:0 0 0 2px var(--accent)}
+input.gap.ok{background:var(--good-bg);border-bottom-color:var(--good);color:var(--good)}
+input.gap.no{background:var(--bad-bg);border-bottom-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.fix{font-weight:600;color:var(--good);margin-right:4px}
+.fb{margin-top:18px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere}
+.fb.ok{background:var(--good-bg);border-color:transparent}
+.fb.no{background:var(--bad-bg);border-color:transparent}
+.fb b{color:var(--good)} .fb.no b{color:var(--bad)}
+
+/* quiz */
+.q{font:700 clamp(21px,5.4vw,26px)/1.3 var(--display);letter-spacing:-.01em;margin:0 0 20px;text-wrap:balance;overflow-wrap:anywhere}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:13px 14px;min-height:54px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer;overflow-wrap:anywhere}
+.opt span:last-child{min-width:0}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .k{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--tint);font-size:13px;font-weight:600;color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--good-bg);border-color:var(--good)}
+.opt.right .k{background:var(--good);color:var(--surface)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
+.opt.wrong .k{background:var(--bad);color:var(--surface)}
+.opt.dim{opacity:.55}
+
+/* matching */
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.col{display:grid;gap:10px;align-content:start}
+.chip{min-height:56px;padding:10px 12px;text-align:left;font-size:15px;line-height:1.3;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer;overflow-wrap:anywhere}
+.chip.sel{border-color:var(--accent);background:var(--tint);box-shadow:0 0 0 1px var(--accent)}
+.chip.done{background:var(--good-bg);border-color:transparent;color:var(--good);cursor:default}
+.chip.slip{background:var(--bad-bg);border-color:var(--bad);animation:nudge .3s}
+@keyframes nudge{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* results */
+.res .big{font:700 clamp(56px,16vw,84px)/1 var(--display);letter-spacing:-.03em;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.res .msg2{font:700 22px/1.2 var(--display);margin:18px 0 0}
+
+/* audio */
+.fwrap{position:relative}
+.spk{position:absolute;top:10px;right:10px;width:46px;height:46px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--accent);cursor:pointer}
+.spk:hover{border-color:var(--accent)}
+.lwrap{display:grid;place-items:center;margin:22px 0 18px}
+.lspk{width:96px;height:96px;display:grid;place-items:center;border-radius:50%;border:2px solid var(--accent);background:var(--tint);color:var(--accent);cursor:pointer}
+.lspk:active{transform:scale(.96)}
+.lin{display:block;width:100%;min-height:54px;padding:0 14px;font:inherit;font-size:18px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.lin:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.lin.ok{background:var(--good-bg);border-color:transparent;color:var(--good)}
+.lin.no{background:var(--bad-bg);border-color:transparent;color:var(--bad)}
+.tile.wide{grid-column:1/-1;min-height:96px}
+.links{display:flex;gap:0 22px;flex-wrap:wrap}
+.vpick{display:flex;align-items:center;gap:10px;margin-top:12px}
+.vpick select{flex:1;min-width:0;min-height:42px;padding:0 10px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.voice{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-top:18px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.segb{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500;cursor:pointer}
+.segb.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+/* reader */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:6px;margin-bottom:10px;background:var(--bg)}
+.zoom{display:flex;align-items:center;gap:6px}
+.zbtn{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:22px;line-height:1;cursor:pointer}
+.zbtn:disabled{opacity:.4;cursor:default}
+.zl{min-width:3.4em;text-align:center;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rt{font-size:clamp(22px,6vw,30px);line-height:1.15;margin:0 0 6px;overflow-wrap:anywhere}
+.pages{overflow-x:auto;margin-top:14px;-webkit-overflow-scrolling:touch}
+.pg{display:block;margin:0 0 12px;background:#fff;border:1px solid var(--line);border-radius:6px}
+.doc{margin-top:14px;padding:6px 18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-wrap:anywhere}
+.doc h2,.doc h3,.doc h4{font-family:var(--display);letter-spacing:-.01em;line-height:1.25;margin:20px 0 8px}
+.doc h2{font-size:24px}.doc h3{font-size:20px}.doc h4{font-size:17px}
+.doc p,.doc li{margin:0 0 10px}.doc ul,.doc ol{padding-left:22px;margin:0 0 10px}
+.doc code{background:var(--tint);padding:1px 5px;border-radius:5px;font-size:.92em}
+.tw{overflow-x:auto;margin:0 0 14px}
+.doc table{border-collapse:collapse;width:100%;font-size:15px}
+.doc th,.doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.doc th{background:var(--tint)}
+.rmsg{margin:18px 0;color:var(--muted)}
+
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script src="pdf.min.js"></script>
+<script>
+/* Lesson-notes parser and exercise builders. Pure functions, no DOM. */
+var Parser = (function () {
+  var HEADER = /^(english|spanish|serbian|russian|german|french|italian|deutsch|german|srpski|srpska|chunk|chunks|phrase|phrases|vocabulary|vocab|word|words|expression|expressions|translation|meaning|gloss|слово|слова|фраза|фразы|выражение|перевод|значение|английский|испанский|сербский|русский|немецкий|французский|итальянский)(?![\p{L}])/iu;
+  var VOCAB = /vocab|chunk|слов|лексик|phrase|expression|palabras|frases|l[eé]xico|vokabel|vokabular|wortschatz|redewendung|wendung|ausdr[uü]ck|vocabulaire|locution|mots|rečnik|recnik|izraz|fraz|reči|речник|израз|фраз/i;
+  var STOP = new Set('a an the to of in on at for with and or but is are was were be been being am do does did have has had will would can could should may might must shall not no it its this that these those you your he she we they them his her our their my me one ones some any about up out off over into from by as if than then so too very just also more most much many get got go goes going made make sth smth smb sb someone something somebody'.split(' '));
+
+  function clean(s) {
+    return String(s).replace(/<br\s*\/?>/gi, ' ').replace(/\\\|/g, '|').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[*`]/g, '').replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').replace(/^_+|_+$/g, '').trim();
+  }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function sample(a, n) { return shuffle(a).slice(0, n); }
+  function dedupe(items) {
+    var seen = {}, out = [];
+    items.forEach(function (it) { var k = it.a.toLowerCase(); if (!seen[k]) { seen[k] = 1; out.push(it); } });
+    return out;
+  }
+  /* If the notes have a Vocabulary/Chunks section, use only the tables inside it. Otherwise use every table. */
+  function onlyVocab(items) {
+    var v = items.filter(function (it) { return it.v; });
+    return (v.length ? v : items).map(function (it) { return { a: it.a, b: it.b }; });
+  }
+  function isHeaderRow(row) { return row.length >= 2 && HEADER.test(row[0]) && HEADER.test(row[1]); }
+
+  /* ---------- Markdown ---------- */
+  function splitRow(line) {
+    var t = line.trim();
+    if (t[0] === '|') t = t.slice(1);
+    if (t[t.length - 1] === '|' && t[t.length - 2] !== '\\') t = t.slice(0, -1);
+    var cells = [], cur = '';
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] === '\\' && t[i + 1] === '|') { cur += '|'; i++; }
+      else if (t[i] === '|') { cells.push(cur); cur = ''; }
+      else cur += t[i];
+    }
+    cells.push(cur);
+    return cells.map(clean);
+  }
+  function isSep(cells) { return cells.length > 0 && cells.every(function (c) { return /^:?-+:?$/.test(c.replace(/\s/g, '')); }); }
+
+  function parseMarkdown(text) {
+    var lines = String(text).replace(/\r/g, '').split('\n'), items = [], i = 0, vocabLevel = 0;
+    function addTable(rows, inVocab) {
+      var start = 0;
+      if (rows.length > 1 && isSep(rows[1])) start = 2; else if (rows.length && isHeaderRow(rows[0])) start = 1;
+      for (var r = start; r < rows.length; r++) {
+        if (isSep(rows[r])) continue;
+        var a = rows[r][0], b = rows[r][1];
+        if (a && b) items.push({ a: a, b: b, v: inVocab });
+      }
+    }
+    while (i < lines.length) {
+      var tr = lines[i].trim();
+      var hm = /^(#{1,6})\s+(.*?)\s*#*$/.exec(tr);
+      if (hm) {
+        var lvl = hm[1].length;
+        if (VOCAB.test(hm[2])) vocabLevel = lvl; else if (vocabLevel && lvl <= vocabLevel) vocabLevel = 0;
+        i++; continue;
+      }
+      if (tr[0] === '|') {
+        var rows = [];
+        while (i < lines.length && lines[i].trim()[0] === '|') { rows.push(splitRow(lines[i])); i++; }
+        addTable(rows, !!vocabLevel); continue;
+      }
+      i++;
+    }
+    if (!items.length) {
+      lines.forEach(function (ln) {
+        var m = /^\s*(?:[-*+]|\d+[.)])\s+(.+?)\s+(?:\u2014|\u2013|=|\u2192)\s+(.+)$/.exec(ln);
+        if (m) { var a = clean(m[1]), b = clean(m[2]); if (a && b) items.push({ a: a, b: b, v: false }); }
+      });
+    }
+    return { items: dedupe(onlyVocab(items)) };
+  }
+
+  /* ---------- PDF (items come from pdf.js: {str, x, y, w, h}) ---------- */
+  function toLines(items, colXs) {
+    var its = items.filter(function (i) { return i.str.trim(); }).sort(function (p, q) { return q.y - p.y || p.x - q.x; });
+    var rows = [];
+    its.forEach(function (it) {
+      var L = rows[rows.length - 1];
+      if (L && Math.abs(L.y - it.y) < Math.max(2, it.h * 0.4)) L.its.push(it); else rows.push({ y: it.y, its: [it] });
+    });
+    return rows.map(function (L) {
+      L.its.sort(function (p, q) { return p.x - q.x; });
+      var cells = [], c = null, h = 0;
+      L.its.forEach(function (it) {
+        h = Math.max(h, it.h);
+        var gap = c ? it.x - c.end : 0;
+        var atCol = !!(colXs && colXs.some(function (x) { return Math.abs(x - it.x) < 1.5; }));
+        if (c && (atCol || gap > Math.max(8, it.h * 1.6))) { cells.push(c); c = null; }
+        if (!c) c = { x: it.x, text: it.str, end: it.x + it.w };
+        else { c.text += (gap > it.h * 0.1 && !/\s$/.test(c.text) && !/^\s/.test(it.str) ? ' ' : '') + it.str; c.end = it.x + it.w; }
+      });
+      if (c) cells.push(c);
+      cells.forEach(function (k) { k.text = k.text.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').trim(); });
+      return { y: L.y, h: h, cells: cells };
+    });
+  }
+  function join(a, b) { return (a + ' ' + b).replace(/\s+/g, ' ').trim(); }
+
+  function columnXs(lines) {
+    var count = {};
+    lines.forEach(function (L) { if (L.cells.length >= 2) L.cells.slice(1).forEach(function (c) { var k = Math.round(c.x * 2) / 2; count[k] = (count[k] || 0) + 1; }); });
+    return Object.keys(count).filter(function (k) { return count[k] >= 2; }).map(Number);
+  }
+
+  function parsePdf(pages) {
+    var lines = [];
+    pages.forEach(function (its) { lines = lines.concat(toLines(its, columnXs(toLines(its)))); lines.push(null); });
+    var hs = lines.filter(Boolean).map(function (l) { return l.h; }).sort(function (a, b) { return a - b; });
+    var med = hs.length ? hs[Math.floor(hs.length / 2)] : 10;
+    var rows = [], last = null, lastY = 0, inTable = false, vocabH = 0;
+    lines.forEach(function (L) {
+      if (!L) { last = null; inTable = false; return; }
+      var cs = L.cells;
+      if (!cs.length) return;
+      if (cs.length >= 2) {
+        if (last && lastY - L.y < 1.5 * L.h) { last.a = join(last.a, cs[0].text); last.b = join(last.b, cs[1].text); lastY = L.y; return; }
+        last = { a: cs[0].text, b: cs[1].text, ax: cs[0].x, bx: cs[1].x, first: !inTable, v: !!vocabH };
+        rows.push(last); lastY = L.y; inTable = true; return;
+      }
+      var c = cs[0];
+      if (last && lastY - L.y < 1.5 * L.h && L.h <= med * 1.1) {
+        if (Math.abs(c.x - last.bx) < 3) { last.b = join(last.b, c.text); lastY = L.y; return; }
+        if (Math.abs(c.x - last.ax) < 3) { last.a = join(last.a, c.text); lastY = L.y; return; }
+      }
+      last = null; inTable = false;
+      if (L.h > med * 1.1 && c.text.length < 90) {
+        if (VOCAB.test(c.text)) vocabH = L.h; else if (vocabH && L.h >= vocabH - 0.3) vocabH = 0;
+      }
+    });
+    var items = rows.filter(function (r) { return r.a && r.b && !(r.first && HEADER.test(r.a) && HEADER.test(r.b)); })
+      .map(function (r) { return { a: r.a, b: r.b, v: r.v }; });
+    return { items: dedupe(onlyVocab(items)) };
+  }
+
+  /* ---------- Language of the left column: 'en', 'es' or 'ru' (a guess, the student can change it) ---------- */
+  var ES_W = new Set('el la los las un una unos unas de del al que por para con se su sus mi tu lo y es está estar ser tener hacer ir dar darse echar poner hay muy más pero como cuando donde'.split(' '));
+  var EN_W = new Set('the to of and in is be have it you for with on at up out off get take make not your my an by from that this are was'.split(' '));
+  function detectLang(items) {
+    var txt = items.slice(0, 60).map(function (i) { return i.a; }).join(' ');
+    var cyr = (txt.match(/[Ѐ-ӿ]/g) || []).length, lat = (txt.match(/[A-Za-zÀ-ſ]/g) || []).length;
+    if (cyr > lat) return 'ru';
+    var es = 2 * (txt.match(/[¿¡ñáéíóúü]/gi) || []).length, en = 0;
+    txt.toLowerCase().split(/[^a-záéíóúñü']+/).forEach(function (w) { if (ES_W.has(w)) es++; if (EN_W.has(w)) en++; });
+    return es > en ? 'es' : 'en';
+  }
+
+  /* ---------- Exercise builders ---------- */
+  function makeGap(item) {
+    var a = item.a.replace(/\|/g, '/').replace(/[{}]/g, '');
+    var hint = Parser.t ? Parser.t('gap_hint', {x: item.b}) : 'Meaning: ' + item.b;
+    var words = a.split(/\s+/), cand = [];
+    words.forEach(function (w, i) {
+      var core = w.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+      if (core.length >= 3 && !STOP.has(core.toLowerCase().split("'")[0]) && !/[()\/\d]/.test(w)) cand.push(i);
+    });
+    if (words.length < 2 || !cand.length) return { text: '{{' + a + '}}', hint: hint, whole: true, src: item };
+    var i = cand[Math.floor(Math.random() * cand.length)];
+    var w = words[i], core = w.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+    words[i] = w.replace(core, '{{' + core + '}}');
+    return { text: words.join(' '), hint: hint, whole: false, src: item };
+  }
+
+  function makeQuiz(items, n) {
+    var out = [];
+    sample(items, n).forEach(function (it) {
+      var dir = Math.random() < 0.5, key = dir ? 'b' : 'a';
+      var q = Parser.t ? (dir ? Parser.t('q_mean', {a: it.a}) : Parser.t('q_which', {b: it.b})) : (dir ? 'What does “' + it.a + '” mean?' : 'Which phrase means “' + it.b + '”?');
+      var seen = {}; seen[it[key].toLowerCase()] = 1;
+      var d = [];
+      shuffle(items).forEach(function (o) { var v = o[key], k = v.toLowerCase(); if (d.length < 3 && o !== it && !seen[k]) { seen[k] = 1; d.push(v); } });
+      if (!d.length) return;
+      out.push({ q: q, options: [it[key]].concat(d), answer: 0, explain: '“' + it.a + '” = ' + it.b, src: it });
+    });
+    return out;
+  }
+
+  return { parseMarkdown: parseMarkdown, parsePdf: parsePdf, makeGap: makeGap, makeQuiz: makeQuiz, detectLang: detectLang, shuffle: shuffle, sample: sample, dedupe: dedupe };
+})();
+if (typeof module !== 'undefined') module.exports = Parser;
+
+</script>
+<script>
+/* Interface text in five languages. Keys are the same everywhere; English is the fallback. Plurals are objects keyed by Intl.PluralRules category. */
+var I18N = {
+  en: {
+    ui_name: 'English',
+    l_fr: 'French',
+    l_sr: 'Serbian', sr_note: 'Croatian and Bosnian voices also work for Serbian.',
+    'pl.lessonN': {one: 'lesson', other: 'lessons'},
+    practise_month: 'Practise all of {m}',
+    sh_title: 'Shadowing', sh_entry: 'Watch a YouTube video, repeat after it, mark phrases and save chunks.', sh_open: 'Open', sh_intro: 'Paste a YouTube link. Replay phrases, slow them down, mark the ones you want to come back to, and save chunks to practise in the other sections.', sh_link: 'YouTube link', sh_lang: 'Language of the video', sh_sec: 'Section (optional)', sh_sec_ph: 'e.g. Series, Interviews, Songs', sh_add: 'Add video', sh_bad: 'That doesn’t look like a YouTube link.', sh_dup: 'This video is already in your list.', sh_none: 'No videos yet.', sh_nosec: 'No section', sh_videos: '← Videos', sh_play: 'Play', sh_pause: 'Pause', sh_back_s: 'Back {n} s', sh_speed: 'Speed', sh_mark: 'Mark the phrase', sh_mark_hint: 'Saves this spot, 3 seconds earlier, so you land just before the phrase.', sh_marks: 'Marked phrases', sh_marks_none: 'Nothing marked yet.', sh_note_ph: 'Note (optional)', sh_go: 'Play', sh_ab: 'Repeat a stretch', sh_set_a: 'Start here', sh_set_b: 'End here', sh_loop: 'Loop', sh_clear: 'Clear', sh_loop_need: 'Set both the start and the end first.', sh_chunk_h: 'Save a chunk from this video', sh_chunk_sub: 'It joins your lessons, so you can practise it in cards, gaps, quiz, match and listening.', sh_phrase: 'Chunk or phrase', sh_meaning: 'Meaning or translation', sh_save: 'Save chunk', sh_chunks: 'Chunks from this video', sh_practise: 'Practise these chunks', sh_chunk_need: 'Write both the chunk and its meaning.', sh_saved: 'Saved.', sh_blocked: 'The video can’t be played here (no internet, or the owner blocked embedding).', sh_yt: 'Open on YouTube', sh_section: 'Section', sh_title_l: 'Title', sh_remove_note: 'Chunks you saved stay in your lessons.', 'pl.mark': {"one": "mark", "other": "marks"},
+    m_listen: 'Listening', needs_voice: 'Needs a voice on this device', listen_label: 'Listen and type what you hear', show_meaning: 'Show the meaning', heard_ok: 'phrases heard correctly', l_accents: 'Right, but check the spelling: {x}', l_answer: 'It was: {x}',
+    tricky: 'Tricky chunks', tricky_sub: '{c} · get one right 3 times in a row and it leaves the list',
+    your_lessons: 'Your lessons',
+    sub: 'Add the notes from each lesson (PDF or Markdown). The chunks and vocabulary in them become flashcards, gap-fill, a quiz and matching.',
+    notes_lang: 'Language of the notes',
+    notes_lang_hint: 'The language of the left column, the one you want to learn. It sets the voice. Pick it before you add a file.',
+    drop_t: 'Add lesson notes', drop_d: 'Choose PDF or .md files, or drop them here',
+    nosave: 'This browser is not letting the page save anything, so your lessons will be gone when you close the tab.',
+    lessons: 'Lessons', mixed: 'All lessons mixed', mixed_sub: '{c} from {n} {w}',
+    added: 'added {d}', read: 'Read', practise: 'Practise', remove: 'Remove', remove_again: 'Tap again to remove',
+    how_h: 'What the notes should look like',
+    how_p: 'The exercises come from the table under “Vocabulary & chunks”: the phrase on the left and its meaning on the right. The whole file stays in the app, so you can read the theory first with the Read button.',
+    sample_btn: 'Try a sample lesson', sample_added: 'Added “Sample lesson”. Remove it any time.',
+    foot: 'Lessons are stored on this device only, so a phone and a laptop each keep their own list. App version {v}.',
+    feedback_btn: 'Send feedback', app_lang: 'App language',
+    install: 'Install as an app', install_ios: 'To install: tap the Share button, then Add to Home Screen.',
+    reading: 'Reading {f}…', added_list: 'Added {x}.',
+    err_table: 'no phrase table found. The notes need a table with the phrase on the left and its meaning on the right.',
+    err_notext: 'this PDF has no selectable text (it looks like a scan). Send the .md version instead.',
+    err_nolib: 'the PDF reader did not load. Check your connection and reload the page.',
+    err_read: 'could not read this file. Try the .md version.',
+    back: '← Back', all_lessons: '← All lessons',
+    notes: 'Notes', opening: 'Opening…', file_gone: 'This file is no longer stored on this device. Add it again to read it.',
+    practise_this: 'Practise this lesson', zoom_out: 'Zoom out', zoom_in: 'Zoom in',
+    zoom_hint: 'Tap + to zoom in, then swipe sideways to move around the page.', drawing: 'Drawing the pages…',
+    page_of: 'Page {n} of {m}', err_draw: 'Could not draw this PDF. Try the .md version.', err_open: 'Could not open this PDF. Try the .md version.',
+    read_first: 'Read the notes first', speak_in: 'Speak in', voice_lang: 'Voice language', off: 'Off',
+    voice: 'Voice', automatic: 'Automatic',
+    no_voice_found: 'No {l} voice found on this device. Install one in your phone or browser settings.',
+    voice_tip: 'Sounds robotic? Install a better {l} voice (free) in your device settings: on iPhone, Accessibility > Spoken Content > Voices, then download an Enhanced one. On Android, install Google text-to-speech voice data. On a laptop, Microsoft Edge has the best free voices.',
+    no_voice_card: 'This device has no {l} voice installed, so there is no sound for this lesson.',
+    needs_more: 'Needs more chunks', last: 'Last: {x}', not_tried: 'Not tried yet', per_round: '{n} per round',
+    m_cards: 'Flashcards', m_gaps: 'Fill the gaps', m_quiz: 'Quiz', m_match: 'Matching',
+    finished: 'Finished', r_clean: 'Clean run.', r_solid: 'Solid. A few to revisit.', r_more: 'Worth another pass.',
+    retry: 'Practise the mistakes', again_go: 'Go again', back_lesson: 'Back to lesson',
+    question: 'Question', answer: 'Answer', flip_aria: '{s}. Press to flip the card.', hear: 'Hear the phrase',
+    again: 'Again', got: 'Got it', tap_flip: 'Tap the card to flip it.',
+    show_q: 'Show the question side first', show_a: 'Show the answer side first',
+    slow_on: 'Slow voice: on', slow_off: 'Slow voice: off', known: '{k} / {n} known', cards_known: 'cards known on the first try',
+    sentences_ok: 'sentences correct', blank: 'Blank {k}', type_phrase: 'Type the phrase', fill_gap: 'Fill in the gap',
+    check: 'Check', correct: 'Correct.', not_quite: 'Not quite.', answer_green: 'The right answer is in green.',
+    see_results: 'See results', next: 'Next', gap_hint: 'Meaning: {x}',
+    questions_ok: 'questions correct', q_mean: 'What does “{a}” mean?', q_which: 'Which phrase means “{b}”?',
+    no_slips: 'No slips', pairs_matched: '{n} pairs matched', round_of: 'Round {r} of {m} · {s}',
+    match_help: 'Tap one on the left, then its partner on the right',
+    fb_title: 'Feedback', fb_sub: 'Something confusing, broken or missing? Tell me and I will read it.',
+    fb_msg: 'Your message', fb_name: 'Your name (optional)', fb_email: 'Your email, if you want a reply (optional)', fb_trap: 'Leave empty',
+    fb_send: 'Send', fb_empty: 'Write a message first.', fb_thanks: 'Thank you, sent.', fb_sending: 'Sending…',
+    fb_fail: 'Could not send', fb_retry: ' Your text is still here, try again.', fb_net: 'No connection. Your text is still here, try again when you are online.',
+    l_en: 'English', l_es: 'Spanish', l_ru: 'Russian', l_de: 'German',
+    'pl.chunk': {one: 'chunk', other: 'chunks'}, 'pl.card': {one: 'card', other: 'cards'}, 'pl.pair': {one: 'pair', other: 'pairs'},
+    'pl.slip': {one: 'slip', other: 'slips'}, 'pl.lesson': {one: 'lesson', other: 'lessons'}
+  },
+  ru: {
+    ui_name: 'Русский',
+    l_fr: 'французский',
+    l_sr: 'сербский', sr_note: 'Для сербского подойдут и хорватские или боснийские голоса.',
+    'pl.lessonN': {one: 'урок', few: 'урока', many: 'уроков', other: 'урока'},
+    practise_month: 'Учить всё: {m}',
+    sh_title: 'Шэдоуинг', sh_entry: 'Смотрите видео на YouTube, повторяйте за ним, отмечайте фразы и сохраняйте выражения.', sh_open: 'Открыть', sh_intro: 'Вставьте ссылку на YouTube. Повторяйте фразы, замедляйте их, отмечайте те, к которым хотите вернуться, и сохраняйте выражения для тренировки в других разделах.', sh_link: 'Ссылка на YouTube', sh_lang: 'Язык видео', sh_sec: 'Раздел (по желанию)', sh_sec_ph: 'например: Сериалы, Интервью, Песни', sh_add: 'Добавить видео', sh_bad: 'Это не похоже на ссылку YouTube.', sh_dup: 'Это видео уже в списке.', sh_none: 'Видео пока нет.', sh_nosec: 'Без раздела', sh_videos: '← Видео', sh_play: 'Играть', sh_pause: 'Пауза', sh_back_s: 'Назад {n} с', sh_speed: 'Скорость', sh_mark: 'Отметить фразу', sh_mark_hint: 'Сохраняет это место на 3 секунды раньше, чтобы вы попали прямо перед фразой.', sh_marks: 'Отмеченные фразы', sh_marks_none: 'Пока ничего не отмечено.', sh_note_ph: 'Заметка (по желанию)', sh_go: 'Играть', sh_ab: 'Повторять отрезок', sh_set_a: 'Начало здесь', sh_set_b: 'Конец здесь', sh_loop: 'Повтор', sh_clear: 'Сбросить', sh_loop_need: 'Сначала задайте начало и конец.', sh_chunk_h: 'Сохранить выражение из видео', sh_chunk_sub: 'Оно появится в ваших уроках, и его можно тренировать в карточках, пропусках, тесте, парах и аудировании.', sh_phrase: 'Выражение или фраза', sh_meaning: 'Значение или перевод', sh_save: 'Сохранить', sh_chunks: 'Выражения из этого видео', sh_practise: 'Тренировать эти выражения', sh_chunk_need: 'Напишите и выражение, и его значение.', sh_saved: 'Сохранено.', sh_blocked: 'Видео не воспроизводится здесь (нет интернета или автор запретил встраивание).', sh_yt: 'Открыть на YouTube', sh_section: 'Раздел', sh_title_l: 'Название', sh_remove_note: 'Сохранённые выражения останутся в ваших уроках.', 'pl.mark': {"one": "метка", "few": "метки", "many": "меток", "other": "меток"},
+    m_listen: 'Аудирование', needs_voice: 'Нужен голос на устройстве', listen_label: 'Послушайте и напишите, что услышали', show_meaning: 'Показать значение', heard_ok: 'фраз понято верно', l_accents: 'Верно, но проверьте написание: {x}', l_answer: 'Правильно: {x}',
+    tricky: 'Трудные фразы', tricky_sub: '{c} · ответьте верно 3 раза подряд, и фраза уйдёт из списка',
+    your_lessons: 'Ваши уроки',
+    sub: 'Добавляйте заметки с каждого урока (PDF или Markdown). Фразы и лексика из них превращаются в карточки, упражнения с пропусками, тест и сопоставление.',
+    notes_lang: 'Язык заметок',
+    notes_lang_hint: 'Язык левого столбца, того, который вы учите. От него зависит озвучка. Выберите его до добавления файла.',
+    drop_t: 'Добавить заметки урока', drop_d: 'Выберите PDF или .md файлы или перетащите их сюда',
+    nosave: 'Этот браузер не даёт странице ничего сохранять, поэтому уроки пропадут после закрытия вкладки.',
+    lessons: 'Уроки', mixed: 'Все уроки вместе', mixed_sub: '{c} из {n} {w}',
+    added: 'добавлено {d}', read: 'Читать', practise: 'Учить', remove: 'Удалить', remove_again: 'Нажмите ещё раз, чтобы удалить',
+    how_h: 'Как должны выглядеть заметки',
+    how_p: 'Упражнения строятся по таблице под заголовком «Vocabulary & chunks»: фраза слева, перевод справа. Весь файл остаётся в приложении, поэтому сначала можно прочитать теорию кнопкой «Читать».',
+    sample_btn: 'Попробовать пример урока', sample_added: 'Добавлен «Sample lesson». Его можно удалить в любой момент.',
+    foot: 'Уроки хранятся только на этом устройстве: на телефоне и на ноутбуке списки свои. Версия приложения {v}.',
+    feedback_btn: 'Написать отзыв', app_lang: 'Язык приложения',
+    install: 'Установить как приложение', install_ios: 'Чтобы установить: нажмите «Поделиться», затем «На экран Домой».',
+    reading: 'Читаю {f}…', added_list: 'Добавлено: {x}.',
+    err_table: 'таблица с фразами не найдена. Нужна таблица: фраза слева, перевод справа.',
+    err_notext: 'в этом PDF нет выделяемого текста (похоже на скан). Пришлите версию .md.',
+    err_nolib: 'не загрузилась программа чтения PDF. Проверьте интернет и обновите страницу.',
+    err_read: 'не удалось прочитать файл. Попробуйте версию .md.',
+    back: '← Назад', all_lessons: '← Все уроки',
+    notes: 'Заметки', opening: 'Открываю…', file_gone: 'Этого файла больше нет на устройстве. Добавьте его снова, чтобы прочитать.',
+    practise_this: 'Учить этот урок', zoom_out: 'Уменьшить', zoom_in: 'Увеличить',
+    zoom_hint: 'Нажмите +, чтобы увеличить, и проводите пальцем в стороны, чтобы двигаться по странице.', drawing: 'Рисую страницы…',
+    page_of: 'Страница {n} из {m}', err_draw: 'Не удалось показать PDF. Попробуйте версию .md.', err_open: 'Не удалось открыть PDF. Попробуйте версию .md.',
+    read_first: 'Сначала прочитать заметки', speak_in: 'Озвучка', voice_lang: 'Язык озвучки', off: 'Выкл.',
+    voice: 'Голос', automatic: 'Автоматически',
+    no_voice_found: 'На этом устройстве нет голоса для языка: {l}. Установите его в настройках телефона или браузера.',
+    voice_tip: 'Голос звучит как робот? Установите голос получше (бесплатно) в настройках устройства. На iPhone: Универсальный доступ > Речь > Голоса, и скачайте вариант Enhanced. На Android установите голосовые данные Google. На ноутбуке лучшие бесплатные голоса в Microsoft Edge.',
+    no_voice_card: 'На этом устройстве не установлен голос для языка: {l}, поэтому звука в этом уроке не будет.',
+    needs_more: 'Нужно больше фраз', last: 'Последний: {x}', not_tried: 'Ещё не пробовали', per_round: '{n} за раунд',
+    m_cards: 'Карточки', m_gaps: 'Пропуски', m_quiz: 'Тест', m_match: 'Сопоставление',
+    finished: 'Готово', r_clean: 'Без ошибок.', r_solid: 'Хорошо. Несколько стоит повторить.', r_more: 'Стоит пройти ещё раз.',
+    retry: 'Повторить ошибки', again_go: 'Ещё раз', back_lesson: 'К уроку',
+    question: 'Вопрос', answer: 'Ответ', flip_aria: '{s}. Нажмите, чтобы перевернуть карточку.', hear: 'Прослушать фразу',
+    again: 'Ещё раз', got: 'Знаю', tap_flip: 'Нажмите на карточку, чтобы перевернуть её.',
+    show_q: 'Сначала показывать вопрос', show_a: 'Сначала показывать ответ',
+    slow_on: 'Медленный голос: вкл.', slow_off: 'Медленный голос: выкл.', known: 'Знаю: {k} / {n}', cards_known: 'карточек с первого раза',
+    sentences_ok: 'предложений верно', blank: 'Пропуск {k}', type_phrase: 'Введите фразу', fill_gap: 'Вставьте пропущенное',
+    check: 'Проверить', correct: 'Верно.', not_quite: 'Не совсем.', answer_green: 'Правильный ответ показан зелёным.',
+    see_results: 'Результаты', next: 'Дальше', gap_hint: 'Значение: {x}',
+    questions_ok: 'вопросов верно', q_mean: 'Что значит «{a}»?', q_which: 'Какая фраза значит «{b}»?',
+    no_slips: 'Без ошибок', pairs_matched: 'Пар найдено: {n}', round_of: 'Раунд {r} из {m} · {s}',
+    match_help: 'Нажмите на фразу слева, затем на её пару справа',
+    fb_title: 'Отзыв', fb_sub: 'Что-то непонятно, не работает или не хватает? Напишите, я прочитаю.',
+    fb_msg: 'Ваше сообщение', fb_name: 'Ваше имя (необязательно)', fb_email: 'Ваша почта, если нужен ответ (необязательно)', fb_trap: 'Оставьте пустым',
+    fb_send: 'Отправить', fb_empty: 'Сначала напишите сообщение.', fb_thanks: 'Спасибо, отправлено.', fb_sending: 'Отправляю…',
+    fb_fail: 'Не удалось отправить', fb_retry: ' Текст сохранён, попробуйте ещё раз.', fb_net: 'Нет соединения. Текст сохранён, попробуйте, когда будет интернет.',
+    l_en: 'английский', l_es: 'испанский', l_ru: 'русский', l_de: 'немецкий',
+    'pl.chunk': {one: 'фраза', few: 'фразы', many: 'фраз', other: 'фразы'}, 'pl.card': {one: 'карточка', few: 'карточки', many: 'карточек', other: 'карточки'},
+    'pl.pair': {one: 'пара', few: 'пары', many: 'пар', other: 'пары'}, 'pl.slip': {one: 'ошибка', few: 'ошибки', many: 'ошибок', other: 'ошибки'},
+    'pl.lesson': {one: 'урока', few: 'уроков', many: 'уроков', other: 'уроков'}
+  },
+  es: {
+    ui_name: 'Español',
+    l_fr: 'francés',
+    l_sr: 'serbio', sr_note: 'Para el serbio también sirven las voces croatas o bosnias.',
+    'pl.lessonN': {one: 'lección', other: 'lecciones'},
+    practise_month: 'Practicar todo: {m}',
+    sh_title: 'Shadowing', sh_entry: 'Mira un vídeo de YouTube, repite tras él, marca frases y guarda expresiones.', sh_open: 'Abrir', sh_intro: 'Pega un enlace de YouTube. Repite frases, ralentízalas, marca las que quieras recuperar y guarda expresiones para practicarlas en las demás secciones.', sh_link: 'Enlace de YouTube', sh_lang: 'Idioma del vídeo', sh_sec: 'Sección (opcional)', sh_sec_ph: 'p. ej. Series, Entrevistas, Canciones', sh_add: 'Añadir vídeo', sh_bad: 'Eso no parece un enlace de YouTube.', sh_dup: 'Este vídeo ya está en tu lista.', sh_none: 'Aún no hay vídeos.', sh_nosec: 'Sin sección', sh_videos: '← Vídeos', sh_play: 'Reproducir', sh_pause: 'Pausa', sh_back_s: 'Atrás {n} s', sh_speed: 'Velocidad', sh_mark: 'Marcar la frase', sh_mark_hint: 'Guarda este punto 3 segundos antes, para que llegues justo antes de la frase.', sh_marks: 'Frases marcadas', sh_marks_none: 'Aún no has marcado nada.', sh_note_ph: 'Nota (opcional)', sh_go: 'Reproducir', sh_ab: 'Repetir un tramo', sh_set_a: 'Inicio aquí', sh_set_b: 'Fin aquí', sh_loop: 'Bucle', sh_clear: 'Borrar', sh_loop_need: 'Primero fija el inicio y el final.', sh_chunk_h: 'Guardar una expresión de este vídeo', sh_chunk_sub: 'Se añade a tus lecciones, así que puedes practicarla en tarjetas, huecos, test, parejas y escucha.', sh_phrase: 'Expresión o frase', sh_meaning: 'Significado o traducción', sh_save: 'Guardar', sh_chunks: 'Expresiones de este vídeo', sh_practise: 'Practicar estas expresiones', sh_chunk_need: 'Escribe la expresión y su significado.', sh_saved: 'Guardado.', sh_blocked: 'El vídeo no se puede reproducir aquí (sin internet o el autor bloqueó la incrustación).', sh_yt: 'Abrir en YouTube', sh_section: 'Sección', sh_title_l: 'Título', sh_remove_note: 'Las expresiones guardadas se quedan en tus lecciones.', 'pl.mark': {"one": "marca", "other": "marcas"},
+    m_listen: 'Escucha', needs_voice: 'Hace falta una voz en el dispositivo', listen_label: 'Escucha y escribe lo que oyes', show_meaning: 'Mostrar el significado', heard_ok: 'frases entendidas correctamente', l_accents: 'Correcto, pero revisa la ortografía: {x}', l_answer: 'Era: {x}',
+    tricky: 'Expresiones difíciles', tricky_sub: '{c} · acierta una 3 veces seguidas y sale de la lista',
+    your_lessons: 'Tus lecciones',
+    sub: 'Añade los apuntes de cada clase (PDF o Markdown). Las expresiones y el vocabulario se convierten en tarjetas, huecos por rellenar, un test y emparejar.',
+    notes_lang: 'Idioma de los apuntes',
+    notes_lang_hint: 'El idioma de la columna izquierda, el que quieres aprender. Define la voz. Elígelo antes de añadir un archivo.',
+    drop_t: 'Añadir apuntes de clase', drop_d: 'Elige archivos PDF o .md, o suéltalos aquí',
+    nosave: 'Este navegador no deja que la página guarde nada, así que tus lecciones se perderán al cerrar la pestaña.',
+    lessons: 'Lecciones', mixed: 'Todas las lecciones juntas', mixed_sub: '{c} de {n} {w}',
+    added: 'añadida el {d}', read: 'Leer', practise: 'Practicar', remove: 'Quitar', remove_again: 'Toca otra vez para quitar',
+    how_h: 'Cómo deben ser los apuntes',
+    how_p: 'Los ejercicios salen de la tabla bajo «Vocabulary & chunks»: la frase a la izquierda y su significado a la derecha. El archivo completo se queda en la app, así que puedes leer antes la teoría con el botón Leer.',
+    sample_btn: 'Probar una lección de ejemplo', sample_added: 'Añadida «Sample lesson». Puedes quitarla cuando quieras.',
+    foot: 'Las lecciones se guardan solo en este dispositivo, así que el móvil y el portátil tienen cada uno su lista. Versión de la app {v}.',
+    feedback_btn: 'Enviar comentarios', app_lang: 'Idioma de la app',
+    install: 'Instalar como app', install_ios: 'Para instalar: toca el botón Compartir y luego Añadir a pantalla de inicio.',
+    reading: 'Leyendo {f}…', added_list: 'Añadido: {x}.',
+    err_table: 'no se encontró ninguna tabla de frases. Los apuntes necesitan una tabla con la frase a la izquierda y su significado a la derecha.',
+    err_notext: 'este PDF no tiene texto seleccionable (parece un escaneo). Envía la versión .md.',
+    err_nolib: 'el lector de PDF no se cargó. Comprueba tu conexión y recarga la página.',
+    err_read: 'no se pudo leer este archivo. Prueba la versión .md.',
+    back: '← Atrás', all_lessons: '← Todas las lecciones',
+    notes: 'Apuntes', opening: 'Abriendo…', file_gone: 'Este archivo ya no está guardado en este dispositivo. Añádelo de nuevo para leerlo.',
+    practise_this: 'Practicar esta lección', zoom_out: 'Alejar', zoom_in: 'Acercar',
+    zoom_hint: 'Toca + para acercar y desliza hacia los lados para moverte por la página.', drawing: 'Dibujando las páginas…',
+    page_of: 'Página {n} de {m}', err_draw: 'No se pudo mostrar este PDF. Prueba la versión .md.', err_open: 'No se pudo abrir este PDF. Prueba la versión .md.',
+    read_first: 'Leer primero los apuntes', speak_in: 'Hablar en', voice_lang: 'Idioma de la voz', off: 'Sin voz',
+    voice: 'Voz', automatic: 'Automática',
+    no_voice_found: 'No hay voz de {l} en este dispositivo. Instala una en los ajustes del móvil o del navegador.',
+    voice_tip: '¿Suena robótica? Instala una voz mejor de {l} (gratis) en los ajustes del dispositivo: en iPhone, Accesibilidad > Contenido hablado > Voces, y descarga una Mejorada. En Android, instala los datos de voz de Google. En ordenador, Microsoft Edge tiene las mejores voces gratis.',
+    no_voice_card: 'Este dispositivo no tiene instalada una voz de {l}, así que esta lección no tendrá sonido.',
+    needs_more: 'Faltan expresiones', last: 'Último: {x}', not_tried: 'Sin probar', per_round: '{n} por ronda',
+    m_cards: 'Tarjetas', m_gaps: 'Rellenar huecos', m_quiz: 'Test', m_match: 'Emparejar',
+    finished: 'Terminado', r_clean: 'Sin fallos.', r_solid: 'Bien. Conviene repasar algunas.', r_more: 'Merece otra vuelta.',
+    retry: 'Practicar los fallos', again_go: 'Otra vez', back_lesson: 'Volver a la lección',
+    question: 'Pregunta', answer: 'Respuesta', flip_aria: '{s}. Pulsa para dar la vuelta a la tarjeta.', hear: 'Escuchar la frase',
+    again: 'Otra vez', got: 'Me la sé', tap_flip: 'Toca la tarjeta para darle la vuelta.',
+    show_q: 'Mostrar primero la pregunta', show_a: 'Mostrar primero la respuesta',
+    slow_on: 'Voz lenta: sí', slow_off: 'Voz lenta: no', known: '{k} / {n} sabidas', cards_known: 'tarjetas sabidas a la primera',
+    sentences_ok: 'frases correctas', blank: 'Hueco {k}', type_phrase: 'Escribe la frase', fill_gap: 'Rellena el hueco',
+    check: 'Comprobar', correct: 'Correcto.', not_quite: 'Casi.', answer_green: 'La respuesta correcta está en verde.',
+    see_results: 'Ver resultados', next: 'Siguiente', gap_hint: 'Significado: {x}',
+    questions_ok: 'preguntas correctas', q_mean: '¿Qué significa «{a}»?', q_which: '¿Qué frase significa «{b}»?',
+    no_slips: 'Sin fallos', pairs_matched: '{n} parejas emparejadas', round_of: 'Ronda {r} de {m} · {s}',
+    match_help: 'Toca una a la izquierda y luego su pareja a la derecha',
+    fb_title: 'Comentarios', fb_sub: '¿Algo confuso, roto o que falta? Cuéntamelo y lo leeré.',
+    fb_msg: 'Tu mensaje', fb_name: 'Tu nombre (opcional)', fb_email: 'Tu correo, si quieres respuesta (opcional)', fb_trap: 'Déjalo vacío',
+    fb_send: 'Enviar', fb_empty: 'Escribe primero un mensaje.', fb_thanks: 'Gracias, enviado.', fb_sending: 'Enviando…',
+    fb_fail: 'No se pudo enviar', fb_retry: ' Tu texto sigue aquí, inténtalo de nuevo.', fb_net: 'Sin conexión. Tu texto sigue aquí, inténtalo cuando tengas internet.',
+    l_en: 'inglés', l_es: 'español', l_ru: 'ruso', l_de: 'alemán',
+    'pl.chunk': {one: 'expresión', other: 'expresiones'}, 'pl.card': {one: 'tarjeta', other: 'tarjetas'}, 'pl.pair': {one: 'pareja', other: 'parejas'},
+    'pl.slip': {one: 'fallo', other: 'fallos'}, 'pl.lesson': {one: 'lección', other: 'lecciones'}
+  },
+  de: {
+    ui_name: 'Deutsch',
+    l_fr: 'Französisch',
+    l_sr: 'Serbisch', sr_note: 'Für Serbisch funktionieren auch kroatische oder bosnische Stimmen.',
+    'pl.lessonN': {one: 'Lektion', other: 'Lektionen'},
+    practise_month: 'Alles üben: {m}',
+    sh_title: 'Shadowing', sh_entry: 'YouTube-Video ansehen, nachsprechen, Stellen markieren und Ausdrücke speichern.', sh_open: 'Öffnen', sh_intro: 'Füge einen YouTube-Link ein. Wiederhole Sätze, verlangsame sie, markiere Stellen, zu denen du zurückwillst, und speichere Ausdrücke zum Üben in den anderen Bereichen.', sh_link: 'YouTube-Link', sh_lang: 'Sprache des Videos', sh_sec: 'Bereich (optional)', sh_sec_ph: 'z. B. Serien, Interviews, Lieder', sh_add: 'Video hinzufügen', sh_bad: 'Das sieht nicht nach einem YouTube-Link aus.', sh_dup: 'Dieses Video ist schon in deiner Liste.', sh_none: 'Noch keine Videos.', sh_nosec: 'Ohne Bereich', sh_videos: '← Videos', sh_play: 'Abspielen', sh_pause: 'Pause', sh_back_s: '{n} s zurück', sh_speed: 'Tempo', sh_mark: 'Stelle markieren', sh_mark_hint: 'Speichert diese Stelle 3 Sekunden früher, damit du kurz vor dem Satz landest.', sh_marks: 'Markierte Stellen', sh_marks_none: 'Noch nichts markiert.', sh_note_ph: 'Notiz (optional)', sh_go: 'Abspielen', sh_ab: 'Abschnitt wiederholen', sh_set_a: 'Start hier', sh_set_b: 'Ende hier', sh_loop: 'Schleife', sh_clear: 'Löschen', sh_loop_need: 'Lege zuerst Start und Ende fest.', sh_chunk_h: 'Ausdruck aus diesem Video speichern', sh_chunk_sub: 'Er landet in deinen Lektionen, sodass du ihn mit Karten, Lücken, Quiz, Paaren und Hören üben kannst.', sh_phrase: 'Ausdruck oder Satz', sh_meaning: 'Bedeutung oder Übersetzung', sh_save: 'Speichern', sh_chunks: 'Ausdrücke aus diesem Video', sh_practise: 'Diese Ausdrücke üben', sh_chunk_need: 'Schreibe den Ausdruck und seine Bedeutung.', sh_saved: 'Gespeichert.', sh_blocked: 'Das Video lässt sich hier nicht abspielen (kein Internet oder Einbetten gesperrt).', sh_yt: 'Auf YouTube öffnen', sh_section: 'Bereich', sh_title_l: 'Titel', sh_remove_note: 'Gespeicherte Ausdrücke bleiben in deinen Lektionen.', 'pl.mark': {"one": "Markierung", "other": "Markierungen"},
+    m_listen: 'Hörverstehen', needs_voice: 'Braucht eine Stimme auf dem Gerät', listen_label: 'Hör zu und tipp, was du hörst', show_meaning: 'Bedeutung zeigen', heard_ok: 'Wendungen richtig verstanden', l_accents: 'Richtig, aber prüf die Schreibweise: {x}', l_answer: 'Es war: {x}',
+    tricky: 'Knifflige Ausdrücke', tricky_sub: '{c} · 3-mal in Folge richtig, dann verschwindet er aus der Liste',
+    your_lessons: 'Deine Lektionen',
+    sub: 'Füge die Notizen jeder Stunde hinzu (PDF oder Markdown). Aus den Wendungen und dem Wortschatz werden Karteikarten, Lückentexte, ein Quiz und Zuordnen.',
+    notes_lang: 'Sprache der Notizen',
+    notes_lang_hint: 'Die Sprache der linken Spalte, also die, die du lernst. Sie bestimmt die Stimme. Wähle sie, bevor du eine Datei hinzufügst.',
+    drop_t: 'Stundennotizen hinzufügen', drop_d: 'PDF- oder .md-Dateien auswählen oder hierher ziehen',
+    nosave: 'Dieser Browser erlaubt der Seite kein Speichern, deine Lektionen sind also weg, sobald du den Tab schließt.',
+    lessons: 'Lektionen', mixed: 'Alle Lektionen gemischt', mixed_sub: '{c} aus {n} {w}',
+    added: 'hinzugefügt am {d}', read: 'Lesen', practise: 'Üben', remove: 'Entfernen', remove_again: 'Nochmal tippen zum Entfernen',
+    how_h: 'So sollten die Notizen aussehen',
+    how_p: 'Die Übungen entstehen aus der Tabelle unter „Vocabulary & chunks“: links die Wendung, rechts die Bedeutung. Die ganze Datei bleibt in der App, du kannst also mit dem Knopf Lesen zuerst die Theorie lesen.',
+    sample_btn: 'Beispiellektion ausprobieren', sample_added: '„Sample lesson“ hinzugefügt. Du kannst sie jederzeit entfernen.',
+    foot: 'Lektionen werden nur auf diesem Gerät gespeichert, Handy und Laptop haben also jeweils ihre eigene Liste. App-Version {v}.',
+    feedback_btn: 'Feedback senden', app_lang: 'App-Sprache',
+    install: 'Als App installieren', install_ios: 'Zum Installieren: Teilen-Knopf antippen, dann „Zum Home-Bildschirm“.',
+    reading: 'Lese {f}…', added_list: 'Hinzugefügt: {x}.',
+    err_table: 'keine Tabelle mit Wendungen gefunden. Die Notizen brauchen eine Tabelle mit der Wendung links und der Bedeutung rechts.',
+    err_notext: 'dieses PDF enthält keinen markierbaren Text (es sieht nach einem Scan aus). Schick stattdessen die .md-Version.',
+    err_nolib: 'der PDF-Leser wurde nicht geladen. Prüfe deine Verbindung und lade die Seite neu.',
+    err_read: 'diese Datei konnte nicht gelesen werden. Versuch die .md-Version.',
+    back: '← Zurück', all_lessons: '← Alle Lektionen',
+    notes: 'Notizen', opening: 'Öffne…', file_gone: 'Diese Datei ist nicht mehr auf diesem Gerät gespeichert. Füge sie erneut hinzu, um sie zu lesen.',
+    practise_this: 'Diese Lektion üben', zoom_out: 'Verkleinern', zoom_in: 'Vergrößern',
+    zoom_hint: 'Tippe auf +, um zu vergrößern, und wische zur Seite, um dich auf der Seite zu bewegen.', drawing: 'Zeichne die Seiten…',
+    page_of: 'Seite {n} von {m}', err_draw: 'Dieses PDF konnte nicht angezeigt werden. Versuch die .md-Version.', err_open: 'Dieses PDF konnte nicht geöffnet werden. Versuch die .md-Version.',
+    read_first: 'Zuerst die Notizen lesen', speak_in: 'Sprechen in', voice_lang: 'Sprache der Stimme', off: 'Aus',
+    voice: 'Stimme', automatic: 'Automatisch',
+    no_voice_found: 'Auf diesem Gerät wurde keine Stimme für {l} gefunden. Installiere eine in den Einstellungen deines Handys oder Browsers.',
+    voice_tip: 'Klingt roboterhaft? Installiere in den Geräteeinstellungen eine bessere Stimme für {l} (kostenlos): auf dem iPhone unter Bedienungshilfen > Gesprochene Inhalte > Stimmen, dort eine „Erweitert“-Stimme laden. Auf Android die Google-Sprachdaten installieren. Am Laptop hat Microsoft Edge die besten kostenlosen Stimmen.',
+    no_voice_card: 'Auf diesem Gerät ist keine Stimme für {l} installiert, deshalb gibt es für diese Lektion keinen Ton.',
+    needs_more: 'Zu wenige Wendungen', last: 'Zuletzt: {x}', not_tried: 'Noch nicht probiert', per_round: '{n} pro Runde',
+    m_cards: 'Karteikarten', m_gaps: 'Lückentext', m_quiz: 'Quiz', m_match: 'Zuordnen',
+    finished: 'Fertig', r_clean: 'Fehlerfrei.', r_solid: 'Solide. Ein paar solltest du wiederholen.', r_more: 'Noch eine Runde lohnt sich.',
+    retry: 'Fehler üben', again_go: 'Nochmal', back_lesson: 'Zurück zur Lektion',
+    question: 'Frage', answer: 'Antwort', flip_aria: '{s}. Drücken, um die Karte umzudrehen.', hear: 'Wendung anhören',
+    again: 'Nochmal', got: 'Gewusst', tap_flip: 'Tippe auf die Karte, um sie umzudrehen.',
+    show_q: 'Zuerst die Frageseite zeigen', show_a: 'Zuerst die Antwortseite zeigen',
+    slow_on: 'Langsame Stimme: an', slow_off: 'Langsame Stimme: aus', known: '{k} / {n} gewusst', cards_known: 'Karten gleich beim ersten Mal gewusst',
+    sentences_ok: 'Sätze richtig', blank: 'Lücke {k}', type_phrase: 'Tippe die Wendung', fill_gap: 'Fülle die Lücke',
+    check: 'Prüfen', correct: 'Richtig.', not_quite: 'Nicht ganz.', answer_green: 'Die richtige Antwort steht in Grün.',
+    see_results: 'Ergebnis ansehen', next: 'Weiter', gap_hint: 'Bedeutung: {x}',
+    questions_ok: 'Fragen richtig', q_mean: 'Was bedeutet „{a}“?', q_which: 'Welche Wendung bedeutet „{b}“?',
+    no_slips: 'Keine Fehler', pairs_matched: '{n} Paare zugeordnet', round_of: 'Runde {r} von {m} · {s}',
+    match_help: 'Tippe links eine an, dann rechts den passenden Partner',
+    fb_title: 'Feedback', fb_sub: 'Etwas unklar, kaputt oder vermisst? Schreib mir, ich lese es.',
+    fb_msg: 'Deine Nachricht', fb_name: 'Dein Name (optional)', fb_email: 'Deine E-Mail, wenn du eine Antwort möchtest (optional)', fb_trap: 'Leer lassen',
+    fb_send: 'Senden', fb_empty: 'Schreib zuerst eine Nachricht.', fb_thanks: 'Danke, gesendet.', fb_sending: 'Sende…',
+    fb_fail: 'Senden fehlgeschlagen', fb_retry: ' Dein Text ist noch da, versuch es nochmal.', fb_net: 'Keine Verbindung. Dein Text ist noch da, versuch es nochmal, wenn du online bist.',
+    l_en: 'Englisch', l_es: 'Spanisch', l_ru: 'Russisch', l_de: 'Deutsch',
+    'pl.chunk': {one: 'Ausdruck', other: 'Ausdrücke'}, 'pl.card': {one: 'Karte', other: 'Karten'}, 'pl.pair': {one: 'Paar', other: 'Paare'},
+    'pl.slip': {one: 'Fehler', other: 'Fehler'}, 'pl.lesson': {one: 'Lektion', other: 'Lektionen'}
+  },
+  sr: {
+    ui_name: 'Srpski',
+    l_fr: 'francuski',
+    l_sr: 'srpski', sr_note: 'Za srpski odgovaraju i hrvatski ili bosanski glasovi.',
+    'pl.lessonN': {one: 'lekcija', few: 'lekcije', other: 'lekcija'},
+    practise_month: 'Vežbaj sve: {m}',
+    sh_title: 'Shadowing', sh_entry: 'Gledaj YouTube snimak, ponavljaj za njim, označavaj fraze i čuvaj izraze.', sh_open: 'Otvori', sh_intro: 'Nalepi YouTube link. Ponavljaj fraze, uspori ih, označi one kojima želiš da se vratiš i sačuvaj izraze za vežbanje u ostalim odeljcima.', sh_link: 'YouTube link', sh_lang: 'Jezik snimka', sh_sec: 'Odeljak (nije obavezno)', sh_sec_ph: 'npr. Serije, Intervjui, Pesme', sh_add: 'Dodaj snimak', sh_bad: 'Ovo ne liči na YouTube link.', sh_dup: 'Ovaj snimak je već na listi.', sh_none: 'Još nema snimaka.', sh_nosec: 'Bez odeljka', sh_videos: '← Snimci', sh_play: 'Pusti', sh_pause: 'Pauza', sh_back_s: 'Nazad {n} s', sh_speed: 'Brzina', sh_mark: 'Označi frazu', sh_mark_hint: 'Čuva ovo mesto 3 sekunde ranije, da stigneš tačno pre fraze.', sh_marks: 'Označene fraze', sh_marks_none: 'Još ništa nije označeno.', sh_note_ph: 'Beleška (nije obavezno)', sh_go: 'Pusti', sh_ab: 'Ponavljaj deo', sh_set_a: 'Početak ovde', sh_set_b: 'Kraj ovde', sh_loop: 'Petlja', sh_clear: 'Poništi', sh_loop_need: 'Prvo postavi početak i kraj.', sh_chunk_h: 'Sačuvaj izraz iz ovog snimka', sh_chunk_sub: 'Ulazi u tvoje lekcije, pa ga možeš vežbati u karticama, prazninama, kvizu, paru i slušanju.', sh_phrase: 'Izraz ili fraza', sh_meaning: 'Značenje ili prevod', sh_save: 'Sačuvaj', sh_chunks: 'Izrazi iz ovog snimka', sh_practise: 'Vežbaj ove izraze', sh_chunk_need: 'Upiši i izraz i njegovo značenje.', sh_saved: 'Sačuvano.', sh_blocked: 'Snimak se ovde ne može pustiti (nema interneta ili je autor zabranio ugrađivanje).', sh_yt: 'Otvori na YouTube-u', sh_section: 'Odeljak', sh_title_l: 'Naslov', sh_remove_note: 'Sačuvani izrazi ostaju u tvojim lekcijama.', 'pl.mark': {"one": "oznaka", "few": "oznake", "other": "oznaka"},
+    m_listen: 'Slušanje', needs_voice: 'Treba glas na uređaju', listen_label: 'Poslušaj i ukucaj šta čuješ', show_meaning: 'Prikaži značenje', heard_ok: 'izraza tačno čuto', l_accents: 'Tačno, ali proveri pravopis: {x}', l_answer: 'Bilo je: {x}',
+    tricky: 'Teški izrazi', tricky_sub: '{c} · tačno tri puta zaredom i izraz izlazi sa liste',
+    your_lessons: 'Tvoje lekcije',
+    sub: 'Dodaj beleške sa svakog časa (PDF ili Markdown). Izrazi i vokabular iz njih postaju kartice, popunjavanje praznina, kviz i spajanje.',
+    notes_lang: 'Jezik beleški',
+    notes_lang_hint: 'Jezik leve kolone, onaj koji učiš. Od njega zavisi glas. Izaberi ga pre dodavanja fajla.',
+    drop_t: 'Dodaj beleške sa časa', drop_d: 'Izaberi PDF ili .md fajlove ili ih prevuci ovde',
+    nosave: 'Ovaj pregledač ne dozvoljava stranici da bilo šta sačuva, pa će lekcije nestati kad zatvoriš karticu.',
+    lessons: 'Lekcije', mixed: 'Sve lekcije zajedno', mixed_sub: '{c} iz {n} {w}',
+    added: 'dodato {d}', read: 'Čitaj', practise: 'Vežbaj', remove: 'Ukloni', remove_again: 'Dodirni ponovo da ukloniš',
+    how_h: 'Kako treba da izgledaju beleške',
+    how_p: 'Vežbe nastaju iz tabele ispod naslova „Vocabulary & chunks“: izraz levo, značenje desno. Ceo fajl ostaje u aplikaciji, pa možeš prvo da pročitaš teoriju dugmetom Čitaj.',
+    sample_btn: 'Probaj primer lekcije', sample_added: 'Dodata je „Sample lesson“. Možeš je ukloniti bilo kad.',
+    foot: 'Lekcije se čuvaju samo na ovom uređaju, pa telefon i laptop imaju svaki svoju listu. Verzija aplikacije {v}.',
+    feedback_btn: 'Pošalji povratnu informaciju', app_lang: 'Jezik aplikacije',
+    install: 'Instaliraj kao aplikaciju', install_ios: 'Za instalaciju: dodirni dugme Podeli, pa Dodaj na početni ekran.',
+    reading: 'Čitam {f}…', added_list: 'Dodato: {x}.',
+    err_table: 'nije pronađena tabela sa izrazima. Beleškama treba tabela sa izrazom levo i značenjem desno.',
+    err_notext: 'ovaj PDF nema tekst koji se može obeležiti (liči na sken). Pošalji .md verziju.',
+    err_nolib: 'čitač PDF-a se nije učitao. Proveri vezu i ponovo učitaj stranicu.',
+    err_read: 'nije moguće pročitati ovaj fajl. Probaj .md verziju.',
+    back: '← Nazad', all_lessons: '← Sve lekcije',
+    notes: 'Beleške', opening: 'Otvaram…', file_gone: 'Ovaj fajl više nije sačuvan na uređaju. Dodaj ga ponovo da bi ga pročitao.',
+    practise_this: 'Vežbaj ovu lekciju', zoom_out: 'Umanji', zoom_in: 'Uvećaj',
+    zoom_hint: 'Dodirni + da uvećaš, pa prevlači u stranu da se krećeš po stranici.', drawing: 'Crtam stranice…',
+    page_of: 'Strana {n} od {m}', err_draw: 'Nije moguće prikazati ovaj PDF. Probaj .md verziju.', err_open: 'Nije moguće otvoriti ovaj PDF. Probaj .md verziju.',
+    read_first: 'Prvo pročitaj beleške', speak_in: 'Govori na', voice_lang: 'Jezik glasa', off: 'Isključeno',
+    voice: 'Glas', automatic: 'Automatski',
+    no_voice_found: 'Na ovom uređaju nema glasa za jezik: {l}. Instaliraj ga u podešavanjima telefona ili pregledača.',
+    voice_tip: 'Zvuči robotski? Instaliraj bolji glas za jezik {l} (besplatno) u podešavanjima uređaja: na iPhone-u Pristupačnost > Izgovoreni sadržaj > Glasovi, pa preuzmi poboljšani. Na Androidu instaliraj Google glasovne podatke. Na laptopu Microsoft Edge ima najbolje besplatne glasove.',
+    no_voice_card: 'Na ovom uređaju nije instaliran glas za jezik: {l}, pa za ovu lekciju nema zvuka.',
+    needs_more: 'Treba više izraza', last: 'Poslednje: {x}', not_tried: 'Još nije probano', per_round: '{n} po rundi',
+    m_cards: 'Kartice', m_gaps: 'Popuni praznine', m_quiz: 'Kviz', m_match: 'Spajanje',
+    finished: 'Završeno', r_clean: 'Bez grešaka.', r_solid: 'Dobro. Nekoliko vredi ponoviti.', r_more: 'Vredi proći još jednom.',
+    retry: 'Vežbaj greške', again_go: 'Ponovo', back_lesson: 'Nazad na lekciju',
+    question: 'Pitanje', answer: 'Odgovor', flip_aria: '{s}. Pritisni da okreneš karticu.', hear: 'Poslušaj izraz',
+    again: 'Ponovo', got: 'Znam', tap_flip: 'Dodirni karticu da je okreneš.',
+    show_q: 'Prvo prikaži pitanje', show_a: 'Prvo prikaži odgovor',
+    slow_on: 'Spor glas: uključen', slow_off: 'Spor glas: isključen', known: 'Znam: {k} / {n}', cards_known: 'kartica iz prvog pokušaja',
+    sentences_ok: 'tačnih rečenica', blank: 'Praznina {k}', type_phrase: 'Ukucaj izraz', fill_gap: 'Popuni prazninu',
+    check: 'Proveri', correct: 'Tačno.', not_quite: 'Nije baš.', answer_green: 'Tačan odgovor je zelenom bojom.',
+    see_results: 'Prikaži rezultat', next: 'Dalje', gap_hint: 'Značenje: {x}',
+    questions_ok: 'tačnih pitanja', q_mean: 'Šta znači „{a}“?', q_which: 'Koji izraz znači „{b}“?',
+    no_slips: 'Bez grešaka', pairs_matched: 'Spojenih parova: {n}', round_of: 'Runda {r} od {m} · {s}',
+    match_help: 'Dodirni jedan levo, pa njegov par desno',
+    fb_title: 'Povratna informacija', fb_sub: 'Nešto nejasno, pokvareno ili nedostaje? Napiši mi, pročitaću.',
+    fb_msg: 'Tvoja poruka', fb_name: 'Tvoje ime (nije obavezno)', fb_email: 'Tvoj e-mail, ako želiš odgovor (nije obavezno)', fb_trap: 'Ostavi prazno',
+    fb_send: 'Pošalji', fb_empty: 'Prvo napiši poruku.', fb_thanks: 'Hvala, poslato.', fb_sending: 'Šaljem…',
+    fb_fail: 'Slanje nije uspelo', fb_retry: ' Tvoj tekst je sačuvan, pokušaj ponovo.', fb_net: 'Nema veze. Tvoj tekst je sačuvan, pokušaj ponovo kad budeš na mreži.',
+    l_en: 'engleski', l_es: 'španski', l_ru: 'ruski', l_de: 'nemački',
+    'pl.chunk': {one: 'izraz', few: 'izraza', other: 'izraza'}, 'pl.card': {one: 'kartica', few: 'kartice', other: 'kartica'},
+    'pl.pair': {one: 'par', few: 'para', other: 'parova'}, 'pl.slip': {one: 'greška', few: 'greške', other: 'grešaka'},
+    'pl.lesson': {one: 'lekcije', few: 'lekcija', other: 'lekcija'}
+  }
+};
+
+</script>
+<script>
+(function(){
+  var app = document.getElementById('app');
+  var LIB_KEY = 'revision-room:library:v1';
+  var S = {lessons: [], last: {}};
+  var IS_PWA = true;
+  var UIS = ['en', 'ru', 'es', 'de', 'sr'], UI = 'en';
+  try { UI = localStorage.getItem('revision-room:ui') || ''; } catch (e) { UI = ''; }
+  if (UIS.indexOf(UI) < 0) {
+    var nl = String((navigator.languages && navigator.languages[0]) || navigator.language || 'en').slice(0, 2).toLowerCase();
+    UI = nl === 'hr' || nl === 'bs' ? 'sr' : (UIS.indexOf(nl) > -1 ? nl : 'en');
+  }
+  document.documentElement.lang = UI;
+  function t(k, v){
+    var d = I18N[UI][k]; if (d == null) d = I18N.en[k]; if (d == null) d = k;
+    return String(d).replace(/\{(\w+)\}/g, function(m, x){ return v && x in v ? v[x] : m; });
+  }
+  function word(n, k){
+    var f = I18N[UI][k] || I18N.en[k], cat = 'other';
+    try { cat = new Intl.PluralRules(UI).select(n); } catch (e) {}
+    return f[cat] || f.other;
+  }
+  Parser.t = t;
+  var VERSION_LABEL = '18, 23 Oct';
+  var FB_KEY = (window.RR_CONFIG && window.RR_CONFIG.feedbackKey) || '';
+  var FB_URL = (window.RR_CONFIG && /^https:\/\//.test(window.RR_CONFIG.feedbackUrl || '') && window.RR_CONFIG.feedbackUrl) || '';
+  var canSave = true, cur = null, notice = null, deferredInstall = null;
+  try {
+    var raw = localStorage.getItem(LIB_KEY);
+    if (raw) { var p = JSON.parse(raw); if (p && Array.isArray(p.lessons)) { S.lessons = p.lessons; S.last = p.last || {}; if (p.addLang) S.addLang = p.addLang; if (p.shadow && Array.isArray(p.shadow.vids)) S.shadow = p.shadow; if (p.hard && typeof p.hard === 'object') S.hard = p.hard; if (p.fold && typeof p.fold === 'object') S.fold = p.fold; } }
+  } catch (e) { canSave = false; }
+  function persist(){ try { localStorage.setItem(LIB_KEY, JSON.stringify(S)); canSave = true; } catch (e) { canSave = false; } }
+
+  /* Original files live in IndexedDB so students can read them later. Everything degrades to "no Read button" if it is unavailable. */
+  var have = {};
+  function idb(){
+    return new Promise(function(res){
+      try {
+        var rq = indexedDB.open('revision-room', 1);
+        rq.onupgradeneeded = function(){ rq.result.createObjectStore('files'); };
+        rq.onsuccess = function(){ res(rq.result); };
+        rq.onerror = rq.onblocked = function(){ res(null); };
+      } catch (e) { res(null); }
+    });
+  }
+  function dbReq(mode, fn){
+    return idb().then(function(db){
+      if (!db) return null;
+      return new Promise(function(res){
+        try {
+          var tx = db.transaction('files', mode), out = fn(tx.objectStore('files'));
+          tx.oncomplete = function(){ res(out && 'result' in out ? out.result : true); };
+          tx.onerror = tx.onabort = function(){ res(null); };
+        } catch (e) { res(null); }
+      });
+    });
+  }
+  function putFile(id, rec){ return dbReq('readwrite', function(st){ return st.put(rec, id); }).then(function(r){ if (r !== null) have[id] = 1; return r !== null; }); }
+  function getFile(id){ return dbReq('readonly', function(st){ return st.get(id); }); }
+  function delFile(id){ delete have[id]; return dbReq('readwrite', function(st){ return st.delete(id); }); }
+  function loadKeys(){ return dbReq('readonly', function(st){ return st.getAllKeys(); }).then(function(k){ have = {}; if (Array.isArray(k)) k.forEach(function(x){ have[x] = 1; }); }); }
+
+  /* ---------- voices: the phone's own text-to-speech ---------- */
+  var SPEECH = ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+  var LOCALES = {en: ['en-GB', 'en-US', 'en-AU', 'en-IE', 'en'], es: ['es-ES', 'es-MX', 'es-US', 'es-419', 'es'], ru: ['ru-RU', 'ru'], de: ['de-DE', 'de-AT', 'de-CH', 'de'], sr: ['sr-RS', 'sr-Latn-RS', 'sr', 'hr-HR', 'bs-BA', 'hr', 'bs'], fr: ['fr-FR', 'fr-CA', 'fr-BE', 'fr-CH', 'fr']};
+  function LN(lg){ return t('l_' + lg); }
+  var SLOW = false;
+  try { SLOW = localStorage.getItem('revision-room:slow') === '1'; } catch (e) {}
+  function allVoices(){ try { return speechSynthesis.getVoices() || []; } catch (e) { return []; } }
+  var CHOSEN = {};
+  try { CHOSEN = JSON.parse(localStorage.getItem('revision-room:voices') || '{}') || {}; } catch (e) { CHOSEN = {}; }
+  var FAMILY = {sr: ['sr', 'hr', 'bs']};
+  function voiceList(lg){
+    var fam = FAMILY[lg] || [lg];
+    var vs = allVoices().filter(function(v){ return fam.indexOf(String(v.lang || '').replace('_', '-').toLowerCase().slice(0, 2)) > -1; });
+    var rank = function(v){ return /natural|neural|premium|enhanced/i.test(v.name) ? 0 : /google|siri/i.test(v.name) ? 1 : 2; };
+    var fi = function(v){ return fam.indexOf(String(v.lang || '').replace('_', '-').toLowerCase().slice(0, 2)); };
+    return vs.sort(function(a, b){ return fi(a) - fi(b) || rank(a) - rank(b) || a.name.localeCompare(b.name); });
+  }
+  function voiceSelect(lg){
+    if (!SPEECH || !LOCALES[lg]) return '';
+    var vs = voiceList(lg);
+    if (!vs.length) return '<p class="hint" id="vhint">' + esc(t('no_voice_found', {l: LN(lg)})) + (lg === 'sr' ? ' ' + esc(t('sr_note')) : '') + '</p>';
+    return '<div class="vpick"><label for="vsel" class="label" style="margin:0">' + esc(t('voice')) + '</label><select id="vsel">' +
+      '<option value="">' + esc(t('automatic')) + '</option>' + vs.map(function(v){ return '<option value="' + esc(v.name) + '"' + (CHOSEN[lg] === v.name ? ' selected' : '') + '>' + esc(v.name) + '</option>'; }).join('') + '</select></div>' +
+      '<p class="hint">' + esc(t('voice_tip', {l: LN(lg)})) + (lg === 'sr' ? ' ' + esc(t('sr_note')) : '') + '</p>';
+  }
+  function pickVoice(lg){
+    if (CHOSEN[lg]) { var c = allVoices().filter(function(v){ return v.name === CHOSEN[lg]; })[0]; if (c) return c; }
+    var vs = allVoices(), prefs = LOCALES[lg] || [];
+    for (var i = 0; i < prefs.length; i++) {
+      var p = prefs[i].toLowerCase();
+      var m = vs.filter(function(v){ var l = String(v.lang || '').replace('_', '-').toLowerCase(); return p.length === 2 ? l.slice(0, 2) === p : l === p; });
+      if (m.length) { var good = m.filter(function(v){ return /google|siri|enhanced|premium|natural|neural/i.test(v.name); }); return good[0] || m[0]; }
+    }
+    return null;
+  }
+  function hasVoiceFor(lg){ return !allVoices().length || !!pickVoice(lg); }
+  function speakable(t){
+    var x = String(t).replace(/\(([^)]*)\)/g, ' ').replace(/\bsth\b|\bsmth\b/gi, 'something').replace(/\bsb\b|\bsmb\b/gi, 'somebody').replace(/\//g, ' or ').replace(/\s+/g, ' ').trim();
+    return x || String(t).trim();
+  }
+  function stopSpeech(){ if (SPEECH) { try { speechSynthesis.cancel(); } catch (e) {} } }
+  function speak(text, lg){
+    if (!SPEECH || !LOCALES[lg]) return;
+    var t = speakable(text); if (!t) return;
+    try {
+      stopSpeech();
+      var u = new SpeechSynthesisUtterance(t), v = pickVoice(lg);
+      u.lang = v ? v.lang : LOCALES[lg][0];
+      if (v) u.voice = v;
+      u.rate = SLOW ? 0.6 : 0.95;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js'; } catch (e) {} }
+
+  var shuffle = Parser.shuffle, sample = Parser.sample;
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function $(s){ return app.querySelector(s); }
+  function plural(n, w){ return n + ' ' + word(n, 'pl.' + w); }
+  function norm(s){ return String(s).toLowerCase().replace(/[‘’]/g, "'").replace(/[.,!?;:]+$/, '').replace(/\s+/g, ' ').trim(); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function top(i, n, label){
+    return '<div class="top"><button class="link" data-back>' + esc(t('back')) + '</button><span class="count">' + esc(label) + '</span></div>' +
+      '<div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="' + n + '" aria-valuenow="' + i + '"><i style="width:' + (n ? i / n * 100 : 0) + '%"></i></div>';
+  }
+
+  var SAMPLE = [
+    '# Sample lesson', '',
+    '## Vocabulary & chunks', '',
+    '| English chunk | Russian |', '|---|---|',
+    '| to weigh the pros and cons | взвесить все за и против |',
+    '| to make up your mind | принять решение |',
+    '| to put off a decision | откладывать решение |',
+    '| sooner or later | рано или поздно |',
+    '| to be on the safe side | на всякий случай |',
+    '| to get on someone\'s nerves | действовать на нервы |',
+    '| to keep an eye on | присматривать за |',
+    '| to take a risk | рискнуть |',
+    '| in the long run | в конечном счёте |',
+    '| unless | если только не |'
+  ].join('\n');
+
+  /* ---------- install hint, shared files (installed app only) ---------- */
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferredInstall = e; installHint(); });
+  function installHint(){
+    var n = document.getElementById('install');
+    if (!n || !IS_PWA) return;
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    if (standalone) { n.innerHTML = ''; return; }
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (deferredInstall) {
+      n.innerHTML = '<button class="btn ghost" id="inst" style="flex:none;margin-top:18px">' + esc(t('install')) + '</button>';
+      document.getElementById('inst').onclick = function(){ deferredInstall.prompt(); deferredInstall = null; n.innerHTML = ''; };
+    } else if (ios) {
+      n.innerHTML = '<p class="foot" style="margin-top:18px">' + esc(t('install_ios')) + '</p>';
+    }
+  }
+  function checkShared(){
+    if (!IS_PWA || !window.caches || !/[?&]shared=1/.test(location.search)) return;
+    caches.open('rr-shared').then(function(c){
+      return c.keys().then(function(keys){
+        return Promise.all(keys.map(function(k){
+          return c.match(k).then(function(r){ return r.blob(); }).then(function(b){ return new File([b], decodeURIComponent(k.url.split('/').pop()), {type: b.type}); });
+        })).then(function(files){
+          try { history.replaceState(null, '', location.pathname); } catch (e) {}
+          return Promise.all(keys.map(function(k){ return c.delete(k); })).then(function(){ if (files.length) handleFiles(files); });
+        });
+      });
+    }).catch(function(){});
+  }
+
+  /* ---------- navigation ---------- */
+  app.addEventListener('toggle', function(e){
+    var d = e.target; if (!d || !d.dataset || !d.dataset.mon) return;
+    (S.fold || (S.fold = {}))[d.dataset.mon] = d.open; persist();
+  }, true);
+  app.addEventListener('click', function(e){
+    var tg;
+    if (e.target.closest('[data-back]')) { stopSpeech(); var bd = cur && deckOf(cur.id); if (bd) menu(bd); else library(); return; }
+    if (e.target.closest('[data-lib]')) { stopSpeech(); library(); return; }
+    if ((tg = e.target.closest('[data-lang]'))) { setLang(tg.dataset.lang); return; }
+    if ((tg = e.target.closest('[data-addlang]'))) { S.addLang = tg.dataset.addlang; persist(); [].forEach.call(app.querySelectorAll('[data-addlang]'), function(b){ var on = b.dataset.addlang === S.addLang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
+    if (e.target.closest('[data-feedback]')) { if (FB_URL) window.open(FB_URL, '_blank', 'noopener'); else feedback(); return; }
+    if ((tg = e.target.closest('[data-mode]'))) { run(tg.dataset.mode); return; }
+    if ((tg = e.target.closest('[data-open]'))) { openLesson(tg.dataset.open); return; }
+    if ((tg = e.target.closest('[data-read]'))) { reader(tg.dataset.read); return; }
+    if ((tg = e.target.closest('[data-del]'))) { armDelete(tg); return; }
+    if (e.target.closest('#sample')) { var sid = addLesson('Sample lesson', Parser.parseMarkdown(SAMPLE)); putFile(sid, {type: 'md', name: 'Sample lesson.md', text: SAMPLE}); notice = {kind: 'good', text: t('sample_added')}; library(); }
+  });
+
+  /* ---------- Shadowing: YouTube videos, marked phrases, chunks that join the lessons ---------- */
+  var sp = {p: null, vid: null, iv: 0, to: 0, ready: false, a: null, b: null, loop: false}, shLang = null, ytLoad = null;
+  function shad(){ return S.shadow || (S.shadow = {vids: []}); }
+  function ytId(s){
+    var m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/|v\/))([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/.exec(String(s).trim());
+    return m ? m[1] : null;
+  }
+  function fmtT(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+  function vTitle(v){ return v.title || 'YouTube · ' + v.id; }
+  function findVid(id){ return shad().vids.filter(function(v){ return v.id === id; })[0]; }
+  function chunkLesson(v, create){
+    var id = 'sh:' + v.id, l = S.lessons.filter(function(x){ return x.id === id; })[0];
+    if (!l && create) { l = {id: id, title: '', added: Date.now(), items: [], lang: v.lang, langSet: true, vid: v.id}; S.lessons.unshift(l); }
+    if (l) { l.title = t('sh_title') + ' · ' + vTitle(v); l.lang = v.lang; }
+    return l;
+  }
+  function loadYT(){
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (ytLoad) return ytLoad;
+    ytLoad = new Promise(function(res, rej){
+      var prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function(){ if (prev) try { prev(); } catch (e) {} res(); };
+      var s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api';
+      s.onerror = function(){ ytLoad = null; rej(new Error('yt')); };
+      document.head.appendChild(s);
+    });
+    return ytLoad;
+  }
+  function closePlayer(){
+    clearInterval(sp.iv); clearTimeout(sp.to);
+    try { if (sp.p && sp.p.destroy) sp.p.destroy(); } catch (e) {}
+    sp = {p: null, vid: null, iv: 0, to: 0, ready: false, a: null, b: null, loop: false};
+  }
+  function fillTitle(v){
+    if (v.title || !window.fetch) return;
+    try {
+      fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + v.id)).then(function(r){ return r.json(); }).then(function(j){
+        if (j && j.title && !v.title) { v.title = String(j.title).slice(0, 140); chunkLesson(v, false); persist(); var h = document.getElementById('vtl'); if (h && sp.vid === v.id) h.value = v.title; if (document.getElementById('shlist')) shadowList(); }
+      }).catch(function(){});
+    } catch (e) {}
+  }
+
+  function shadowList(msg){
+    cur = null; closePlayer();
+    var vids = shad().vids, secs = [];
+    vids.forEach(function(v){ var s = v.sec || ''; if (secs.indexOf(s) < 0) secs.push(s); });
+    secs.sort(function(a, b){ return a === '' ? 1 : b === '' ? -1 : a.localeCompare(b); });
+    if (!shLang) shLang = addLang();
+    var html = '<div class="bar"><button class="link" data-back>' + esc(t('back')) + '</button></div>' +
+      '<header><h1><span class="hl">' + esc(t('sh_title')) + '</span></h1><p class="sub">' + esc(t('sh_intro')) + '</p></header>' +
+      '<form class="fb" id="shadd" novalidate><label>' + esc(t('sh_link')) + '<input id="shurl" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…"></label>' +
+      '<div><span class="label" style="margin:0 0 6px;display:block">' + esc(t('sh_lang')) + '</span><div class="seg" role="group">' +
+      ['en', 'es', 'ru', 'de', 'sr', 'fr'].map(function(k){ return '<button type="button" class="segb' + (shLang === k ? ' on' : '') + '" data-shlang="' + k + '" aria-pressed="' + (shLang === k) + '">' + LANG_NAMES[k] + '</button>'; }).join('') + '</div></div>' +
+      '<label>' + esc(t('sh_sec')) + '<input id="shsec" list="shsecs" maxlength="40" autocomplete="off" placeholder="' + esc(t('sh_sec_ph')) + '"></label>' +
+      '<datalist id="shsecs">' + secs.filter(Boolean).map(function(s){ return '<option value="' + esc(s) + '">'; }).join('') + '</datalist>' +
+      '<div id="shmsg" class="msg ' + (msg ? msg.kind : '') + '" role="status">' + (msg ? esc(msg.text) : '') + '</div>' +
+      '<div class="row" style="margin-top:0"><button class="btn primary" type="submit">' + esc(t('sh_add')) + '</button></div></form><div id="shlist">';
+    if (!vids.length) html += '<p class="hint">' + esc(t('sh_none')) + '</p>';
+    secs.forEach(function(s){
+      html += '<section class="sec"><p class="label">' + esc(s || t('sh_nosec')) + '</p><ul class="lessons">';
+      vids.filter(function(v){ return (v.sec || '') === s; }).forEach(function(v){
+        var l = chunkLesson(v, false), nc = l ? l.items.length : 0;
+        html += '<li class="lesson"><div class="lm"><b class="lt">' + esc(vTitle(v)) + '</b><span class="lc">' + LANG_NAMES[v.lang] + ' · ' + esc(plural((v.marks || []).length, 'mark')) + ' · ' + esc(plural(nc, 'chunk')) + '</span></div>' +
+          '<div class="la"><button class="btn primary sm" data-svid="' + v.id + '">' + esc(t('sh_open')) + '</button><button class="btn ghost sm" data-svdel="' + v.id + '">' + esc(t('remove')) + '</button></div></li>';
+      });
+      html += '</ul></section>';
+    });
+    if (vids.length) html += '<p class="hint">' + esc(t('sh_remove_note')) + '</p>';
+    app.innerHTML = html + '</div>';
+    window.scrollTo(0, 0);
+    vids.forEach(fillTitle);
+  }
+  function addVideo(){
+    var id = ytId(document.getElementById('shurl').value);
+    if (!id) { shMsg(t('sh_bad'), 'bad'); return; }
+    if (findVid(id)) { shMsg(t('sh_dup'), 'bad'); return; }
+    var sec = document.getElementById('shsec').value.trim().slice(0, 40);
+    shad().vids.unshift({id: id, title: '', sec: sec, lang: shLang || addLang(), marks: [], added: Date.now()});
+    persist(); openVideo(id);
+  }
+  function shMsg(text, kind){ var m = document.getElementById('shmsg'); if (m) { m.textContent = text; m.className = 'msg ' + (kind || ''); } }
+
+  function marksHtml(v){
+    var ms = v.marks || [];
+    if (!ms.length) return '<li class="hint" style="list-style:none">' + esc(t('sh_marks_none')) + '</li>';
+    return ms.map(function(m, i){
+      return '<li class="mk"><button class="chip" data-mgo="' + i + '">▶ ' + fmtT(m.t) + '</button><input data-mnote="' + i + '" maxlength="120" value="' + esc(m.note || '') + '" placeholder="' + esc(t('sh_note_ph')) + '" aria-label="' + esc(t('sh_note_ph')) + '"><button class="x" data-mdel="' + i + '" aria-label="' + esc(t('remove')) + '">×</button></li>';
+    }).join('');
+  }
+  function chunksHtml(v){
+    var l = chunkLesson(v, false), its = l ? l.items : [];
+    if (!its.length) return '';
+    return '<p class="label" style="margin-top:22px">' + esc(t('sh_chunks')) + '</p><ul class="mks">' + its.map(function(c, i){
+      return '<li class="mk"><span class="ck"><b>' + esc(c.a) + '</b> — ' + esc(c.b) + '</span>' + (c.t != null ? '<button class="chip" data-cgo="' + i + '">▶ ' + fmtT(c.t) + '</button>' : '') + '<button class="x" data-cdel="' + i + '" aria-label="' + esc(t('remove')) + '">×</button></li>';
+    }).join('') + '</ul><div class="row" style="margin-top:12px"><button class="btn primary" data-open="sh:' + v.id + '">' + esc(t('sh_practise')) + '</button></div>';
+  }
+  function abHtml(){
+    return (sp.a != null ? 'A ' + fmtT(sp.a) : 'A –') + ' · ' + (sp.b != null ? 'B ' + fmtT(sp.b) : 'B –');
+  }
+  function openVideo(id){
+    var v = findVid(id); if (!v) { shadowList(); return; }
+    cur = null; closePlayer(); sp.vid = id;
+    app.innerHTML = '<div class="bar"><button class="link" data-sback>' + esc(t('sh_videos')) + '</button></div>' +
+      '<h1 class="rt" id="vt">' + esc(vTitle(v)) + '</h1>' +
+      '<div class="yt"><div id="ytp"></div></div><div id="ytmsg" class="msg" role="status"></div>' +
+      '<div class="ctl"><button class="btn primary sm" id="ytplay" data-yt="play">' + esc(t('sh_play')) + '</button>' +
+      [3, 5, 10].map(function(n){ return '<button class="btn ghost sm" data-ytback="' + n + '">' + esc(t('sh_back_s', {n: n})) + '</button>'; }).join('') +
+      '<span class="count" id="ytnow">0:00</span></div>' +
+      '<div class="pick" style="margin-top:14px"><span class="label" style="margin:0">' + esc(t('sh_speed')) + '</span><div class="seg" role="group">' +
+      [0.5, 0.75, 1].map(function(r){ return '<button class="segb' + (r === 1 ? ' on' : '') + '" data-ytrate="' + r + '" aria-pressed="' + (r === 1) + '">' + r + '×</button>'; }).join('') + '</div></div>' +
+      '<div class="row" style="margin-top:16px"><button class="btn primary" data-yt="mark">' + esc(t('sh_mark')) + '</button></div><p class="hint">' + esc(t('sh_mark_hint')) + '</p>' +
+      '<p class="label" style="margin-top:22px">' + esc(t('sh_marks')) + '</p><ul class="mks" id="marks">' + marksHtml(v) + '</ul>' +
+      '<p class="label" style="margin-top:22px">' + esc(t('sh_ab')) + '</p><div class="ctl"><button class="btn ghost sm" data-yt="seta">' + esc(t('sh_set_a')) + '</button><button class="btn ghost sm" data-yt="setb">' + esc(t('sh_set_b')) + '</button><button class="btn ghost sm" id="ytloop" data-yt="loop" aria-pressed="false">' + esc(t('sh_loop')) + '</button><button class="btn ghost sm" data-yt="clear">' + esc(t('sh_clear')) + '</button><span class="count" id="ytab">' + abHtml() + '</span></div>' +
+      '<form class="fb" id="chf" novalidate style="margin-top:26px"><p class="label" style="margin:0">' + esc(t('sh_chunk_h')) + '</p><p class="hint" style="margin:0">' + esc(t('sh_chunk_sub')) + '</p>' +
+      '<label>' + esc(t('sh_phrase')) + '<input id="cha" maxlength="200" autocomplete="off"></label><label>' + esc(t('sh_meaning')) + '<input id="chb" maxlength="200" autocomplete="off"></label>' +
+      '<div id="chm" class="msg" role="status"></div><div class="row" style="margin-top:0"><button class="btn primary" type="submit">' + esc(t('sh_save')) + '</button></div></form>' +
+      '<div id="chunks">' + chunksHtml(v) + '</div>' +
+      '<form class="fb" id="vdet" novalidate style="margin-top:30px"><label>' + esc(t('sh_title_l')) + '<input id="vtl" maxlength="140" value="' + esc(v.title || '') + '"></label>' +
+      '<label>' + esc(t('sh_section')) + '<input id="vsec" maxlength="40" list="shsecs2" value="' + esc(v.sec || '') + '"></label><datalist id="shsecs2">' +
+      shad().vids.map(function(x){ return x.sec; }).filter(function(s, i, a){ return s && a.indexOf(s) === i; }).map(function(s){ return '<option value="' + esc(s) + '">'; }).join('') + '</datalist>' +
+      '<div><span class="label" style="margin:0 0 6px;display:block">' + esc(t('sh_lang')) + '</span><div class="seg" role="group">' +
+      ['en', 'es', 'ru', 'de', 'sr', 'fr'].map(function(k){ return '<button type="button" class="segb' + (v.lang === k ? ' on' : '') + '" data-vlang="' + k + '" aria-pressed="' + (v.lang === k) + '">' + LANG_NAMES[k] + '</button>'; }).join('') + '</div></div></form>' +
+      '<p class="foot"><a href="https://youtu.be/' + v.id + '" target="_blank" rel="noopener">' + esc(t('sh_yt')) + '</a></p>';
+    window.scrollTo(0, 0);
+    var gave = false;
+    function blocked(ev){
+      if (gave || sp.vid !== id) return; gave = true;
+      var m = document.getElementById('ytmsg');
+      if (m) { m.className = 'msg bad'; m.innerHTML = esc(t('sh_blocked')) + (ev && ev.data ? ' (' + esc(String(ev.data)) + ')' : '') + ' <a href="https://youtu.be/' + id + '" target="_blank" rel="noopener">' + esc(t('sh_yt')) + '</a>'; }
+    }
+    sp.to = setTimeout(function(){ if (!sp.ready) blocked(); }, 12000);
+    loadYT().then(function(){
+      if (sp.vid !== id) return;
+      sp.p = new YT.Player('ytp', {videoId: id, width: '100%', height: '100%', playerVars: Object.assign({playsinline: 1, rel: 0, modestbranding: 1}, /^https?:$/.test(location.protocol) ? {origin: location.origin} : {}), events: {
+        onReady: function(){
+          sp.ready = true; clearTimeout(sp.to);
+          try { var d = sp.p.getVideoData(); if (d && d.title && !v.title) { v.title = String(d.title).slice(0, 140); chunkLesson(v, false); persist(); var h = document.getElementById('vt'); if (h) h.textContent = v.title; var ti = document.getElementById('vtl'); if (ti && !ti.value) ti.value = v.title; } } catch (e) {}
+        },
+        onError: blocked,
+        onStateChange: function(ev){ var b = document.getElementById('ytplay'); if (b) b.textContent = t(ev.data === 1 ? 'sh_pause' : 'sh_play'); }
+      }});
+      sp.iv = setInterval(tick, 250);
+    }).catch(function(){ blocked(); });
+    fillTitle(v);
+  }
+  function now(){ try { return sp.ready ? sp.p.getCurrentTime() : 0; } catch (e) { return 0; } }
+  function tick(){
+    var n = document.getElementById('ytnow'); if (!n) { closePlayer(); return; }
+    var c = now(); n.textContent = fmtT(c);
+    if (sp.loop && sp.a != null && sp.b != null && c >= sp.b) { try { sp.p.seekTo(sp.a, true); } catch (e) {} }
+  }
+  function seek(sec){ if (!sp.ready) return; try { sp.p.seekTo(Math.max(0, sec), true); sp.p.playVideo(); } catch (e) {} }
+  function ytAct(a){
+    var v = findVid(sp.vid); if (!v) return;
+    if (a === 'play') { if (!sp.ready) return; try { sp.p.getPlayerState() === 1 ? sp.p.pauseVideo() : sp.p.playVideo(); } catch (e) {} }
+    else if (a === 'mark') {
+      var tm = Math.max(0, Math.round(now() - 3));
+      v.marks = (v.marks || []); v.marks.push({t: tm, note: ''}); v.marks.sort(function(x, y){ return x.t - y.t; }); persist();
+      document.getElementById('marks').innerHTML = marksHtml(v);
+      var ix = v.marks.map(function(m){ return m.t; }).lastIndexOf(tm), inp = app.querySelector('[data-mnote="' + ix + '"]');
+      if (inp) try { inp.scrollIntoView({block: 'nearest'}); } catch (e) {}
+    }
+    else if (a === 'seta') { sp.a = now(); abUpdate(); }
+    else if (a === 'setb') { sp.b = now(); abUpdate(); }
+    else if (a === 'clear') { sp.a = sp.b = null; sp.loop = false; abUpdate(); }
+    else if (a === 'loop') {
+      if (sp.loop) sp.loop = false;
+      else if (sp.a != null && sp.b != null && sp.b > sp.a) { sp.loop = true; seek(sp.a); }
+      else { var m = document.getElementById('ytmsg'); if (m) { m.className = 'msg bad'; m.textContent = t('sh_loop_need'); setTimeout(function(){ if (m.textContent === t('sh_loop_need')) { m.textContent = ''; m.className = 'msg'; } }, 2500); } }
+      abUpdate();
+    }
+  }
+  function abUpdate(){
+    var el = document.getElementById('ytab'), lb = document.getElementById('ytloop');
+    if (el) el.textContent = abHtml();
+    if (lb) { lb.setAttribute('aria-pressed', String(sp.loop)); lb.classList.toggle('on', sp.loop); }
+  }
+  function saveChunk(){
+    var v = findVid(sp.vid); if (!v) return;
+    var a = document.getElementById('cha').value.trim(), b = document.getElementById('chb').value.trim(), m = document.getElementById('chm');
+    if (!a || !b) { m.className = 'msg bad'; m.textContent = t('sh_chunk_need'); return; }
+    var l = chunkLesson(v, true);
+    if (!l.items.some(function(x){ return norm(x.a) === norm(a); })) l.items.push({a: a, b: b, t: Math.floor(now())});
+    persist();
+    document.getElementById('cha').value = ''; document.getElementById('chb').value = '';
+    m.className = 'msg good'; m.textContent = t('sh_saved');
+    document.getElementById('chunks').innerHTML = chunksHtml(v);
+  }
+  function shArm(btn, fn){
+    if (btn.dataset.armed) { fn(); return; }
+    btn.dataset.armed = '1'; btn.classList.add('armed'); btn.textContent = t('remove_again');
+    setTimeout(function(){ if (btn.isConnected) { delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent = t('remove'); } }, 3000);
+  }
+  app.addEventListener('click', function(e){
+    var tg;
+    if (e.target.closest('[data-shadow]')) { shadowList(); return; }
+    if (e.target.closest('[data-sback]')) { closePlayer(); shadowList(); return; }
+    if ((tg = e.target.closest('[data-svid]'))) { openVideo(tg.dataset.svid); return; }
+    if ((tg = e.target.closest('[data-svdel]'))) { shArm(tg, function(){ var id = tg.dataset.svdel; shad().vids = shad().vids.filter(function(x){ return x.id !== id; }); var l = S.lessons.filter(function(x){ return x.id === 'sh:' + id; })[0]; if (l) delete l.vid; persist(); shadowList(); }); return; }
+    if ((tg = e.target.closest('[data-shlang]'))) { shLang = tg.dataset.shlang; [].forEach.call(app.querySelectorAll('[data-shlang]'), function(b){ var on = b.dataset.shlang === shLang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); return; }
+    if (!sp.vid) return;
+    var v = findVid(sp.vid); if (!v) return;
+    if ((tg = e.target.closest('[data-yt]'))) { ytAct(tg.dataset.yt); return; }
+    if ((tg = e.target.closest('[data-ytback]'))) { seek(now() - (+tg.dataset.ytback)); return; }
+    if ((tg = e.target.closest('[data-ytrate]'))) { var r = +tg.dataset.ytrate; try { if (sp.ready) sp.p.setPlaybackRate(r); } catch (x) {} [].forEach.call(app.querySelectorAll('[data-ytrate]'), function(b){ var on = +b.dataset.ytrate === r; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); return; }
+    if ((tg = e.target.closest('[data-mgo]'))) { var m = v.marks[+tg.dataset.mgo]; if (m) seek(m.t); return; }
+    if ((tg = e.target.closest('[data-mdel]'))) { v.marks.splice(+tg.dataset.mdel, 1); persist(); document.getElementById('marks').innerHTML = marksHtml(v); return; }
+    if ((tg = e.target.closest('[data-cgo]'))) { var cl = chunkLesson(v, false), c = cl && cl.items[+tg.dataset.cgo]; if (c && c.t != null) seek(c.t - 2); return; }
+    if ((tg = e.target.closest('[data-cdel]'))) {
+      var l2 = chunkLesson(v, false); if (!l2) return;
+      l2.items.splice(+tg.dataset.cdel, 1);
+      if (!l2.items.length) { S.lessons = S.lessons.filter(function(x){ return x !== l2; }); Object.keys(S.hard || {}).forEach(function(k){ if (S.hard[k].i === l2.id) delete S.hard[k]; }); }
+      persist(); document.getElementById('chunks').innerHTML = chunksHtml(v); return;
+    }
+    if ((tg = e.target.closest('[data-vlang]'))) {
+      v.lang = tg.dataset.vlang; chunkLesson(v, false); persist();
+      [].forEach.call(app.querySelectorAll('[data-vlang]'), function(b){ var on = b.dataset.vlang === v.lang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); return;
+    }
+  });
+  app.addEventListener('submit', function(e){
+    if (e.target.id === 'shadd') { e.preventDefault(); addVideo(); }
+    else if (e.target.id === 'chf') { e.preventDefault(); saveChunk(); }
+    else if (e.target.id === 'vdet') { e.preventDefault(); }
+  });
+  app.addEventListener('input', function(e){
+    var el = e.target, v = sp.vid && findVid(sp.vid); if (!v) return;
+    if (el.dataset && el.dataset.mnote != null) { var m = v.marks[+el.dataset.mnote]; if (m) { m.note = el.value.slice(0, 120); persist(); } }
+    else if (el.id === 'vtl') { v.title = el.value.slice(0, 140); chunkLesson(v, false); persist(); var h = document.getElementById('vt'); if (h) h.textContent = vTitle(v); }
+    else if (el.id === 'vsec') { v.sec = el.value.trim().slice(0, 40); persist(); }
+  });
+
+  /* Tricky chunks: a miss puts a chunk on the list, three right in a row takes it off. Works across lessons. */
+  function track(it, ok){
+    if (!it || !it.a) return;
+    var h = S.hard || (S.hard = {}), k = (it.l || '') + '|' + it.a.toLowerCase(), e = h[k];
+    if (!ok) { if (!e) e = h[k] = {a: it.a, b: it.b, l: it.l, i: it.i, n: 0, s: 0}; e.n++; e.s = 0; if (it.i) e.i = it.i; }
+    else if (e) { e.s++; if (e.s >= 3) delete h[k]; }
+    persist();
+  }
+  function hardItems(){
+    var h = S.hard || {};
+    return Object.keys(h).map(function(k){ return h[k]; }).sort(function(x, y){ return y.n - x.n; }).map(function(e){ return {a: e.a, b: e.b, l: e.l, i: e.i}; });
+  }
+  function lessonLang(l){ return l.lang || 'en'; }
+  function withLang(l){ var lg = lessonLang(l); return l.items.map(function(it){ return {a: it.a, b: it.b, l: lg, i: l.id}; }); }
+  function deckOf(id){
+    if (id === '!') { var hi = hardItems(); return hi.length ? {id: '!', title: t('tricky'), items: hi} : null; }
+    if (id.slice(0, 2) === 'm:') {
+      var mk = id.slice(2), ml = S.lessons.filter(function(x){ return monthKey(lessonTime(x)) === mk; });
+      if (!ml.length) return null;
+      var mit = []; ml.forEach(function(x){ mit = mit.concat(withLang(x)); });
+      return {id: id, title: monthLabel(+mk.slice(0, 4), +mk.slice(5) - 1), items: Parser.dedupe(mit)};
+    }
+    if (id === '*') {
+      var items = [];
+      S.lessons.forEach(function(l){ items = items.concat(withLang(l)); });
+      return {id: '*', title: t('mixed'), items: Parser.dedupe(items)};
+    }
+    var l = S.lessons.filter(function(x){ return x.id === id; })[0];
+    return l ? {id: l.id, title: l.title, items: withLang(l), lang: lessonLang(l)} : null;
+  }
+  function addLang(){ return LOCALES[S.addLang] ? S.addLang : 'en'; }
+  var LANG_NAMES = {en: 'English', es: 'Español', ru: 'Русский', de: 'Deutsch', sr: 'Srpski', fr: 'Français'};
+  function setLang(lg){
+    var l = cur && S.lessons.filter(function(x){ return x.id === cur.id; })[0];
+    if (!l || (lg !== 'off' && !LOCALES[lg])) return;
+    l.lang = lg; l.langSet = true; persist();
+    var d = deckOf(l.id); menu(d);
+    if (lg !== 'off' && l.items.length) speak(l.items[0].a, lg);
+  }
+  function openLesson(id){ var d = deckOf(id); if (d) menu(d); }
+
+  function armDelete(btn){
+    if (btn.dataset.armed) {
+      var id = btn.dataset.del;
+      S.lessons = S.lessons.filter(function(l){ return l.id !== id; });
+      delete S.last[id]; Object.keys(S.hard || {}).forEach(function(k){ if (S.hard[k].i === id) delete S.hard[k]; }); persist(); notice = null; delFile(id).then(library); return;
+    }
+    btn.dataset.armed = '1'; btn.classList.add('armed'); btn.textContent = t('remove_again');
+    setTimeout(function(){ if (btn.isConnected) { delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent = t('remove'); } }, 3000);
+  }
+
+  /* ---------- feedback (Web3Forms -> teacher's email) ---------- */
+  function feedback(){
+    app.innerHTML = '<div class="bar"><button class="link" data-back>\u2190 Back</button></div><header><h1><span class="hl">' + esc(t('fb_title')) + '</span></h1><p class="sub">' + esc(t('fb_sub')) + '</p></header>' +
+      '<form class="fb" id="fbf" novalidate><label>' + esc(t('fb_msg')) + '<textarea id="fbm" maxlength="3000" required></textarea></label>' +
+      '<label>' + esc(t('fb_name')) + '<input id="fbn" maxlength="80" autocomplete="name"></label>' +
+      '<label>' + esc(t('fb_email')) + '<input id="fbe" type="email" maxlength="120" autocomplete="email"></label>' +
+      '<div class="trap" aria-hidden="true"><label>' + esc(t('fb_trap')) + '<input id="fbt" tabindex="-1" autocomplete="off"></label></div>' +
+      '<div id="fbs" class="msg" role="status"></div><div class="row"><button class="btn primary" id="fbsend" type="submit">' + esc(t('fb_send')) + '</button></div></form>';
+    window.scrollTo(0, 0);
+    var form = $('#fbf'), st = $('#fbs'), btn = $('#fbsend');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var m = $('#fbm').value.trim();
+      if (!m) { st.className = 'msg bad'; st.textContent = t('fb_empty'); return; }
+      if ($('#fbt').value) { st.className = 'msg good'; st.textContent = t('fb_thanks'); form.querySelector('#fbm').value = ''; return; }
+      var mail = $('#fbe').value.trim(), nm = $('#fbn').value.trim();
+      var payload = {access_key: FB_KEY, subject: 'Revision Room feedback' + (nm ? ' from ' + nm : ''), from_name: 'Revision Room', name: nm || 'Anonymous',
+        message: m + '\n\n---\nApp version ' + VERSION_LABEL + ' | lessons: ' + S.lessons.length + ' | ' + (navigator.userAgent || '')};
+      if (mail) { payload.email = mail; payload.replyto = mail; }
+      btn.disabled = true; st.className = 'msg'; st.textContent = t('fb_sending');
+      fetch('https://api.web3forms.com/submit', {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(payload)})
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return {ok: r.ok && j.success !== false, j: j}; }); })
+        .then(function(o){
+          if (o.ok) { st.className = 'msg good'; st.textContent = t('fb_thanks'); $('#fbm').value = ''; btn.disabled = false; }
+          else { st.className = 'msg bad'; st.textContent = t('fb_fail') + (o.j && o.j.message ? ': ' + o.j.message : '.') + t('fb_retry'); btn.disabled = false; }
+        }, function(){ st.className = 'msg bad'; st.textContent = t('fb_net'); btn.disabled = false; });
+    });
+  }
+
+  /* ---------- library ---------- */
+  function fmtDate(ts){ try { return new Date(ts).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}); } catch (e) { return ''; } }
+  function uiPicker(){
+    return '<select class="uisel" id="uisel" aria-label="' + esc(t('app_lang')) + '" title="' + esc(t('app_lang')) + '">' +
+      UIS.map(function(k){ return '<option value="' + k + '"' + (UI === k ? ' selected' : '') + '>' + I18N[k].ui_name + '</option>'; }).join('') + '</select>';
+  }
+  /* ---------- lessons grouped by month (date taken from the file name, else the day it was added) ---------- */
+  var MON = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11, ene:0,abr:3,ago:7,dic:11, 'm\u00e4r':2,mai:4,okt:9,dez:11,
+    '\u044f\u043d\u0432':0,'\u0444\u0435\u0432':1,'\u043c\u0430\u0440':2,'\u0430\u043f\u0440':3,'\u043c\u0430\u044f':4,'\u043c\u0430\u0439':4,'\u0438\u044e\u043d':5,'\u0438\u044e\u043b':6,'\u0430\u0432\u0433':7,'\u0441\u0435\u043d':8,'\u043e\u043a\u0442':9,'\u043d\u043e\u044f':10,'\u0434\u0435\u043a':11};
+  function validDate(y, m, d){ return y > 2000 && y < 2100 && m >= 0 && m < 12 && d >= 1 && d <= 31 ? new Date(y, m, d).getTime() : null; }
+  function lessonTime(l){
+    var s = String(l.title), m, v = null;
+    if ((m = /(\d{1,2})\s+(\p{L}{3})\p{L}*\.?,?\s+(\d{4})/u.exec(s)) && MON[m[2].toLowerCase()] != null) v = validDate(+m[3], MON[m[2].toLowerCase()], +m[1]);
+    if (v == null && (m = /(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/.exec(s))) v = validDate(+m[1], +m[2] - 1, +m[3]);
+    if (v == null && (m = /(\d{1,2})[-.\/](\d{1,2})[-.\/](\d{4})/.exec(s))) v = validDate(+m[3], +m[2] - 1, +m[1]);
+    return v == null ? l.added : v;
+  }
+  var UI_LOCALE = {en: 'en-GB', ru: 'ru', es: 'es', de: 'de', sr: 'sr-Latn'};
+  function monthLabel(y, m){
+    var s; try { s = new Date(y, m, 1).toLocaleDateString(UI_LOCALE[UI] || 'en-GB', {month: 'long', year: 'numeric'}); } catch (e) { s = (m + 1) + '/' + y; }
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function monthKey(ts){ var d = new Date(ts); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function monthGroups(ls){
+    var sorted = ls.slice().sort(function(x, y){ return lessonTime(y) - lessonTime(x); }), out = [], idx = {};
+    sorted.forEach(function(l){
+      var ts = lessonTime(l), k = monthKey(ts);
+      if (!(k in idx)) { var d = new Date(ts); idx[k] = out.length; out.push({key: k, label: monthLabel(d.getFullYear(), d.getMonth()), list: []}); }
+      out[idx[k]].list.push(l);
+    });
+    return out;
+  }
+  function lessonLi(l){
+    return '<li class="lesson"><div class="lm"><b class="lt">' + esc(l.title) + '</b><span class="lc">' + (l.lang && LANG_NAMES[l.lang] ? LANG_NAMES[l.lang] + ' · ' : '') + plural(l.items.length, 'chunk') + ' · ' + esc(t('added', {d: fmtDate(l.added)})) + '</span></div>' +
+          '<div class="la">' + (have[l.id] ? '<button class="btn ghost sm" data-read="' + esc(l.id) + '">' + esc(t('read')) + '</button>' : '') + '<button class="btn primary sm" data-open="' + esc(l.id) + '">' + esc(t('practise')) + '</button><button class="btn ghost sm" data-del="' + esc(l.id) + '">' + esc(t('remove')) + '</button></div></li>';
+  }
+  function library(){
+    cur = null;
+    var ls = S.lessons, html =
+      '<a class="brand" href="https://t.me/polycorner" target="_blank" rel="noopener"><span class="dot" aria-hidden="true"></span>Sasha\u2019s World of Languages</a>' +
+      '<header><p class="eyebrow"><span>Revision Room</span>' + uiPicker() + '</p><h1><span class="hl">' + esc(t('your_lessons')) + '</span></h1>' +
+      '<p class="sub">' + esc(t('sub')) + '</p></header>' +
+      '<div class="pick"><span class="label" style="margin:0">' + esc(t('notes_lang')) + '</span><div class="seg" role="group" aria-label="' + esc(t('notes_lang')) + '">' +
+        ['en', 'es', 'ru', 'de', 'sr', 'fr'].map(function(k){ return '<button class="segb' + (addLang() === k ? ' on' : '') + '" data-addlang="' + k + '" aria-pressed="' + (addLang() === k) + '">' + LANG_NAMES[k] + '</button>'; }).join('') +
+        '</div><p class="hint">' + esc(t('notes_lang_hint')) + '</p></div>' +
+      '<label class="drop" id="drop" for="file"><span class="dt">' + esc(t('drop_t')) + '</span><span class="dd">' + esc(t('drop_d')) + '</span></label>' +
+      '<input class="vh" type="file" id="file" multiple accept=".pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain">' +
+      '<div id="msg" class="msg ' + (notice ? notice.kind : '') + '" role="status">' + (notice ? esc(notice.text) : '') + '</div>' +
+      '<section class="sec"><ul class="lessons"><li class="lesson"><div class="lm"><b class="lt">' + esc(t('sh_title')) + '</b><span class="lc">' + esc(t('sh_entry')) + '</span></div><div class="la"><button class="btn primary sm" data-shadow>' + esc(t('sh_open')) + '</button></div></li></ul></section>' +
+      (canSave ? '' : '<p class="warn">' + esc(t('nosave')) + '</p>');
+    if (ls.length) {
+      html += '<section class="sec"><p class="label">' + esc(t('lessons')) + '</p><ul class="lessons">';
+      var hn = hardItems().length;
+      if (hn) html += '<li class="lesson"><div class="lm"><b class="lt">' + esc(t('tricky')) + '</b><span class="lc">' + esc(t('tricky_sub', {c: plural(hn, 'chunk')})) + '</span></div><div class="la"><button class="btn primary sm" data-open="!">' + esc(t('practise')) + '</button></div></li>';
+      if (ls.length > 1) {
+        var tot = deckOf('*');
+        html += '<li class="lesson"><div class="lm"><b class="lt">' + esc(t('mixed')) + '</b><span class="lc">' + esc(t('mixed_sub', {c: plural(tot.items.length, 'chunk'), n: ls.length, w: word(ls.length, 'pl.lesson')})) + '</span></div><div class="la"><button class="btn primary sm" data-open="*">' + esc(t('practise')) + '</button></div></li>';
+      }
+      var groups = monthGroups(ls);
+      if (groups.length < 2) {
+        (groups[0] ? groups[0].list : []).forEach(function(l){ html += lessonLi(l); });
+        html += '</ul></section>';
+      } else {
+        html += '</ul>';
+        groups.forEach(function(g, gi){
+          var open = S.fold && g.key in S.fold ? !!S.fold[g.key] : gi === 0;
+          html += '<details class="mon" data-mon="' + g.key + '"' + (open ? ' open' : '') + '><summary><span class="mn">' + esc(g.label) + '</span><span class="mc">' + esc(plural(g.list.length, 'lessonN')) + '</span></summary><ul class="lessons">';
+          if (g.list.length > 1) html += '<li class="lesson"><div class="lm"><b class="lt">' + esc(t('practise_month', {m: g.label})) + '</b></div><div class="la"><button class="btn primary sm" data-open="m:' + g.key + '">' + esc(t('practise')) + '</button></div></li>';
+          g.list.forEach(function(l){ html += lessonLi(l); });
+          html += '</ul></details>';
+        });
+        html += '</section>';
+      }
+    } else {
+      html += '<section class="how"><h2>' + esc(t('how_h')) + '</h2>' +
+        '<p>' + esc(t('how_p')) + '</p>' +
+        '<div class="mini"><table><thead><tr><th>English chunk</th><th>Russian</th></tr></thead><tbody>' +
+        '<tr><td>to make up your mind</td><td>принять решение</td></tr><tr><td>sooner or later</td><td>рано или поздно</td></tr><tr><td>to keep an eye on</td><td>присматривать за</td></tr></tbody></table></div>' +
+        '<button class="btn ghost" id="sample" style="flex:none">' + esc(t('sample_btn')) + '</button></section>';
+    }
+    html += '<div id="install"></div>' + ((FB_KEY || FB_URL) ? '<div class="row" style="margin-top:26px"><button class="btn ghost sm" data-feedback>' + esc(t('feedback_btn')) + '</button></div>' : '') + '<p class="foot">' + esc(t('foot', {v: VERSION_LABEL})) + '</p>';
+    app.innerHTML = html;
+    notice = null;
+    installHint();
+    var input = $('#file'), drop = $('#drop');
+    input.addEventListener('change', function(){ var f = [].slice.call(input.files); input.value = ''; if (f.length) handleFiles(f); });
+    ['dragenter', 'dragover'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function(e){ var f = [].slice.call(e.dataTransfer && e.dataTransfer.files || []); if (f.length) handleFiles(f); });
+    var us = $('#uisel');
+    if (us) us.onchange = function(){ UI = us.value; try { localStorage.setItem('revision-room:ui', UI); } catch (x) {} document.documentElement.lang = UI; library(); };
+    window.scrollTo(0, 0);
+  }
+
+  function readText(file){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result)); }; fr.onerror = function(){ rej(new Error('read')); }; fr.readAsText(file); }); }
+  function readPdf(file){
+    return new Promise(function(res, rej){
+      if (!window.pdfjsLib) { rej(new Error('nolib')); return; }
+      var fr = new FileReader();
+      fr.onerror = function(){ rej(new Error('read')); };
+      fr.onload = function(){
+        var keep = fr.result.slice(0);
+        pdfjsLib.getDocument({data: new Uint8Array(fr.result)}).promise.then(function(doc){
+          var pages = [], chain = Promise.resolve();
+          for (var n = 1; n <= doc.numPages; n++) (function(n){
+            chain = chain.then(function(){ return doc.getPage(n); }).then(function(pg){ return pg.getTextContent(); }).then(function(tc){
+              pages.push(tc.items.map(function(it){ var t = it.transform; return {str: it.str, x: t[4], y: t[5], w: it.width, h: it.height || Math.abs(t[3])}; }));
+            });
+          })(n);
+          return chain.then(function(){
+            var any = pages.some(function(p){ return p.some(function(i){ return i.str.trim(); }); });
+            if (!any) throw new Error('notext');
+            res({r: Parser.parsePdf(pages), data: keep});
+          });
+        }).catch(rej);
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  function addLesson(title, r){
+    var ex = S.lessons.filter(function(l){ return l.title.toLowerCase() === title.toLowerCase(); })[0];
+    var id;
+    if (ex) { ex.items = r.items; delete ex.rules; ex.added = Date.now(); id = ex.id; if (!ex.langSet) ex.lang = addLang(); }
+    else { id = uid(); S.lessons.unshift({id: id, title: title, added: Date.now(), items: r.items, lang: addLang()}); }
+    persist();
+    return id;
+  }
+
+  async function handleFiles(files){
+    var msg = $('#msg'), ok = [], bad = [];
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i], title = f.name.replace(/\.[^.]+$/, '').replace(/_/g, ' ').trim() || 'Lesson';
+      msg.className = 'msg'; msg.textContent = t('reading', {f: f.name});
+      try {
+        var isPdf = /\.pdf$/i.test(f.name) || f.type === 'application/pdf';
+        var r, rec;
+        if (isPdf) { var o = await readPdf(f); r = o.r; rec = {type: 'pdf', name: f.name, data: o.data}; }
+        else { var txt = await readText(f); r = Parser.parseMarkdown(txt); rec = {type: 'md', name: f.name, text: txt}; }
+        if (!r.items.length) bad.push('“' + f.name + '”: ' + t('err_table'));
+        else { var lid = addLesson(title, r); await putFile(lid, rec); ok.push('“' + title + '”: ' + plural(r.items.length, 'chunk')); }
+      } catch (e) {
+        var why = e && e.message === 'notext' ? t('err_notext') : e && e.message === 'nolib' ? t('err_nolib') : t('err_read');
+        bad.push('“' + f.name + '”: ' + why);
+      }
+    }
+    notice = {kind: bad.length ? (ok.length ? '' : 'bad') : 'good', text: (ok.length ? t('added_list', {x: ok.join('; ')}) : '') + (ok.length && bad.length ? '\n' : '') + bad.join('\n')};
+    library();
+  }
+
+  /* ---------- reader ---------- */
+  function mdInline(t){
+    return esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<i>$2</i>');
+  }
+  function mdCells(ln){
+    var t = ln.trim().replace(/^\|/, '').replace(/\|$/, ''), out = [], cur = '';
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] === '\\' && t[i + 1] === '|') { cur += '|'; i++; } else if (t[i] === '|') { out.push(cur.trim()); cur = ''; } else cur += t[i];
+    }
+    out.push(cur.trim());
+    return out;
+  }
+  function mdToHtml(text){
+    var lines = String(text).replace(/\r/g, '').split('\n'), out = [], i = 0, list = null, m;
+    function close(){ if (list) { out.push('</' + list + '>'); list = null; } }
+    function open(tag){ if (list !== tag) { close(); out.push('<' + tag + '>'); list = tag; } }
+    while (i < lines.length) {
+      var t = lines[i].trim();
+      if (!t) { close(); i++; continue; }
+      if ((m = /^(#{1,6})\s+(.*?)\s*#*$/.exec(t))) { close(); var n = Math.min(m[1].length, 3) + 1; out.push('<h' + n + '>' + mdInline(m[2]) + '</h' + n + '>'); i++; continue; }
+      if (t[0] === '|') {
+        close(); var rows = [];
+        while (i < lines.length && lines[i].trim()[0] === '|') { rows.push(mdCells(lines[i])); i++; }
+        var head = rows.length > 1 && rows[1].every(function(c){ return /^:?-+:?$/.test(c.replace(/\s/g, '')); });
+        var h = '<div class="tw"><table>';
+        rows.forEach(function(r, ri){
+          if (head && ri === 1) return;
+          var tag = head && ri === 0 ? 'th' : 'td';
+          h += '<tr>' + r.map(function(c){ return '<' + tag + '>' + mdInline(c) + '</' + tag + '>'; }).join('') + '</tr>';
+        });
+        out.push(h + '</table></div>'); continue;
+      }
+      if ((m = /^[-*+]\s+(.*)$/.exec(t))) { open('ul'); out.push('<li>' + mdInline(m[1]) + '</li>'); i++; continue; }
+      if ((m = /^\d+[.)]\s+(.*)$/.exec(t))) { open('ol'); out.push('<li>' + mdInline(m[1]) + '</li>'); i++; continue; }
+      close(); out.push('<p>' + mdInline(t) + '</p>'); i++;
+    }
+    close();
+    return out.join('');
+  }
+
+  var onResize = null;
+  window.addEventListener('resize', function(){ if (onResize) onResize(); });
+
+  function reader(id){
+    var lesson = S.lessons.filter(function(l){ return l.id === id; })[0];
+    var title = lesson ? lesson.title : t('notes');
+    var ZOOMS = [1, 1.5, 2, 3], zi = 0, token = 0, pdfDoc = null, host = null;
+    onResize = null;
+    app.innerHTML = '<div class="bar"><button class="link" data-back>' + esc(t('back')) + '</button></div><h1 class="rt">' + esc(title) + '</h1><p class="rmsg">' + esc(t('opening')) + '</p>';
+    window.scrollTo(0, 0);
+    getFile(id).then(function(rec){
+      if (!rec) { delete have[id]; notice = {kind: 'bad', text: t('file_gone')}; library(); return; }
+      var practise = '<div class="row"><button class="btn primary" data-open="' + esc(id) + '">' + esc(t('practise_this')) + '</button></div>';
+      if (rec.type === 'md') {
+        app.innerHTML = '<div class="bar"><button class="link" data-back>' + esc(t('back')) + '</button></div><h1 class="rt">' + esc(title) + '</h1>' +
+          '<div class="doc">' + mdToHtml(rec.text) + '</div>' + practise;
+        return;
+      }
+      app.innerHTML = '<div class="bar"><button class="link" data-back>' + esc(t('back')) + '</button><div class="zoom"><button class="zbtn" id="zout" aria-label="' + esc(t('zoom_out')) + '">−</button><span class="zl" id="zl">100%</span><button class="zbtn" id="zin" aria-label="' + esc(t('zoom_in')) + '">+</button></div></div>' +
+        '<h1 class="rt">' + esc(title) + '</h1><p class="hint">' + esc(t('zoom_hint')) + '</p>' +
+        '<div class="pages" id="pages"><p class="rmsg">' + esc(t('drawing')) + '</p></div>' + practise;
+      host = $('#pages');
+      if (!window.pdfjsLib) { host.innerHTML = '<p class="rmsg">' + esc(t('err_nolib')) + '</p>'; return; }
+      function setZoom(d){ zi = Math.max(0, Math.min(ZOOMS.length - 1, zi + d)); $('#zl').textContent = Math.round(ZOOMS[zi] * 100) + '%'; $('#zout').disabled = zi === 0; $('#zin').disabled = zi === ZOOMS.length - 1; draw(); }
+      $('#zout').onclick = function(){ setZoom(-1); };
+      $('#zin').onclick = function(){ setZoom(1); };
+      $('#zout').disabled = true;
+      function draw(){
+        if (!pdfDoc) return;
+        var my = ++token, w = Math.floor(host.clientWidth * ZOOMS[zi]), chain = Promise.resolve();
+        host.innerHTML = '';
+        for (var n = 1; n <= pdfDoc.numPages; n++) (function(n){
+          chain = chain.then(function(){
+            if (my !== token) return;
+            return pdfDoc.getPage(n).then(function(page){
+              if (my !== token) return;
+              var vp = page.getViewport({scale: 1}), k = w / vp.width, cssH = vp.height * k;
+              var dpr = Math.min(window.devicePixelRatio || 1, 3), area = (w * dpr) * (cssH * dpr);
+              if (area > 9e6) dpr *= Math.sqrt(9e6 / area);
+              var c = document.createElement('canvas');
+              c.className = 'pg'; c.width = Math.floor(w * dpr); c.height = Math.floor(cssH * dpr);
+              c.style.width = w + 'px'; c.style.height = cssH + 'px';
+              c.setAttribute('role', 'img'); c.setAttribute('aria-label', t('page_of', {n: n, m: pdfDoc.numPages}));
+              host.appendChild(c);
+              return page.render({canvasContext: c.getContext('2d'), viewport: page.getViewport({scale: k * dpr})}).promise;
+            });
+          });
+        })(n);
+        chain.catch(function(){ if (my === token && !host.childNodes.length) host.innerHTML = '<p class="rmsg">' + esc(t('err_draw')) + '</p>'; });
+      }
+      pdfjsLib.getDocument({data: new Uint8Array(rec.data.slice(0))}).promise.then(function(doc){
+        pdfDoc = doc; draw();
+        var lastW = host.clientWidth;
+        onResize = function(){ if (!host.isConnected) { onResize = null; return; } if (Math.abs(host.clientWidth - lastW) > 20) { lastW = host.clientWidth; draw(); } };
+      }).catch(function(){ host.innerHTML = '<p class="rmsg">' + esc(t('err_open')) + '</p>'; });
+    });
+  }
+
+  /* ---------- lesson menu ---------- */
+  var MODES = [
+    {id: 'cards', name: 'm_cards', min: 1, count: function(d){ return plural(d.items.length, 'card'); }},
+    {id: 'gaps',  name: 'm_gaps',  min: 1, count: function(d){ return t('per_round', {n: Math.min(10, d.items.length)}); }},
+    {id: 'quiz',  name: 'm_quiz',  min: 2, count: function(d){ return t('per_round', {n: Math.min(10, d.items.length)}); }},
+    {id: 'match', name: 'm_match', min: 3, count: function(d){ return plural(Math.min(12, d.items.length), 'pair'); }},
+    {id: 'listen', name: 'm_listen', min: 1, count: function(d){ return t('per_round', {n: Math.min(10, listenItems(d).length)}); }}
+  ];
+  function listenItems(d){ return d.items.filter(function(it){ return SPEECH && LOCALES[it.l] && allVoices().length > 0 && !!pickVoice(it.l); }); }
+  function menu(deck){
+    cur = deck;
+    var last = S.last[deck.id] || {};
+    app.innerHTML =
+      '<button class="link" data-lib>' + esc(t('all_lessons')) + '</button>' +
+      '<header><p class="eyebrow"><span>' + plural(deck.items.length, 'chunk') + '</span></p>' +
+      '<h1><span class="hl">' + esc(deck.title) + '</span></h1></header>' +
+      (have[deck.id] ? '<div class="row" style="margin-top:18px"><button class="btn ghost" data-read="' + esc(deck.id) + '" style="flex:none">' + esc(t('read_first')) + '</button></div>' : '') +
+      (SPEECH && deck.id !== '*' && deck.id !== '!' && deck.id.slice(0, 2) !== 'm:' ? '<div class="voice"><span class="label" style="margin:0">' + esc(t('speak_in')) + '</span><div class="seg" role="group" aria-label="' + esc(t('voice_lang')) + '">' +
+        [['en', 'English'], ['es', 'Español'], ['ru', 'Русский'], ['de', 'Deutsch'], ['sr', 'Srpski'], ['fr', 'Français'], ['off', t('off')]].map(function(o){ return '<button class="segb' + (deck.lang === o[0] ? ' on' : '') + '" data-lang="' + o[0] + '" aria-pressed="' + (deck.lang === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div></div>' + (deck.lang !== 'off' ? '<div id="vbox">' + voiceSelect(deck.lang) + '</div>' : '') : '') +
+      '<div class="tiles">' + MODES.map(function(m){
+        var ls = m.id === 'listen', n = ls ? listenItems(deck).length : deck.items.length, off = n < m.min;
+        return '<button class="tile' + (ls ? ' wide' : '') + '" data-mode="' + m.id + '"' + (off ? ' disabled' : '') + '><span class="tn">' + esc(t(m.name)) + '</span><span class="tc">' + esc(off ? t(ls ? 'needs_voice' : 'needs_more') : m.count(deck)) + '</span>' +
+          '<span class="tl">' + esc(last[m.id] ? t('last', {x: last[m.id]}) : t('not_tried')) + '</span></button>';
+      }).join('') + '</div>';
+    window.scrollTo(0, 0);
+    bindVoiceSelect(deck);
+  }
+  function bindVoiceSelect(deck){
+    var sel = document.getElementById('vsel'); if (!sel || !deck.lang) return;
+    sel.onchange = function(){
+      if (sel.value) CHOSEN[deck.lang] = sel.value; else delete CHOSEN[deck.lang];
+      try { localStorage.setItem('revision-room:voices', JSON.stringify(CHOSEN)); } catch (e) {}
+      var l = S.lessons.filter(function(x){ return x.id === deck.id; })[0];
+      if (l && l.items.length) speak(l.items[0].a, deck.lang);
+    };
+  }
+  if (SPEECH) { try { speechSynthesis.addEventListener('voiceschanged', function(){ var b = document.getElementById('vbox'); if (b && cur && cur.lang && cur.lang !== 'off') { b.innerHTML = voiceSelect(cur.lang); bindVoiceSelect(cur); } if (cur && app.querySelector('.tiles')) { var fd = deckOf(cur.id); if (fd) menu(fd); } }); } catch (e) {} }
+  function run(id){ if (id === 'cards') flash(cur); else if (id === 'gaps') gaps(cur); else if (id === 'quiz') quiz(cur); else if (id === 'match') match(cur); else if (id === 'listen') listen(cur); }
+
+  function finish(id, o){
+    stopSpeech();
+    if (o.save !== false) { S.last[cur.id] = S.last[cur.id] || {}; S.last[cur.id][id] = o.last; persist(); }
+    var msg = o.pct >= 90 ? t('r_clean') : o.pct >= 60 ? t('r_solid') : t('r_more');
+    app.innerHTML = '<div class="res"><p class="label">' + esc(t('finished')) + '</p><p class="big">' + esc(o.big) + '</p><p class="sub">' + esc(o.sub) + '</p><p class="msg2">' + msg + '</p>' +
+      '<div class="row">' + (o.retry ? '<button class="btn primary" id="retry">' + esc(t('retry')) + '</button>' : '') +
+      '<button class="btn ' + (o.retry ? 'ghost' : 'primary') + '" id="again">' + esc(t('again_go')) + '</button><button class="btn ghost" data-back>' + esc(t('back_lesson')) + '</button></div></div>';
+    if (o.retry) $('#retry').onclick = o.retry;
+    $('#again').onclick = o.again;
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Flashcards ---------- */
+  function flash(deck){
+    var cards = deck.items.map(function(it){ return {front: it.a, back: it.b, l: it.l, src: it}; });
+    var total = cards.length, q = shuffle(cards.map(function(_, i){ return i; }));
+    var known = 0, rev = false, flipped = false, again = {}, againN = 0;
+    function draw(){
+      if (!q.length) {
+        var first = total - againN;
+        return finish('cards', {big: first + ' / ' + total, sub: t('cards_known'), pct: first / total * 100, last: first + '/' + total, again: function(){ flash(deck); }});
+      }
+      var c = cards[q[0]];
+      var front = rev ? c.back : c.front, back = rev ? c.front : c.back;
+      var lblQ = t('question'), lblA = t('answer');
+      var talk = SPEECH && LOCALES[c.l] && !(rev && !flipped), noVoice = talk && !hasVoiceFor(c.l);
+      app.innerHTML = top(known, total, t('known', {k: known, n: total})) +
+        '<div class="fwrap"><button class="flash" id="flip" aria-label="' + esc(t('flip_aria', {s: flipped ? lblA : lblQ})) + '"><span class="side">' + (flipped ? lblA : lblQ) + '</span>' +
+        '<span class="face ' + (flipped ? 'back' : '') + '">' + esc(flipped ? back : front) + '</span></button>' +
+        (talk && !noVoice ? '<button class="spk" id="spk" aria-label="' + esc(t('hear')) + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
+        (noVoice ? '<p class="hint">' + esc(t('no_voice_card', {l: LN(c.l)})) + '</p>' : '') +
+        (flipped ? '<div class="row"><button class="btn ghost" id="again">' + esc(t('again')) + '</button><button class="btn primary" id="got">' + esc(t('got')) + '</button></div>' : '<p class="hint">' + esc(t('tap_flip')) + '</p>') +
+        '<div class="links"><button class="link small" id="swap">' + esc(rev ? t('show_q') : t('show_a')) + '</button>' +
+        (talk && !noVoice ? '<button class="link small" id="slow" aria-pressed="' + SLOW + '">' + esc(SLOW ? t('slow_on') : t('slow_off')) + '</button>' : '') + '</div>';
+      $('#flip').onclick = function(){ flipped = !flipped; draw(); if (flipped && $('#got')) $('#got').focus(); };
+      $('#swap').onclick = function(){ rev = !rev; flipped = false; draw(); };
+      if ($('#spk')) $('#spk').onclick = function(){ speak(c.front, c.l); };
+      if ($('#slow')) $('#slow').onclick = function(){ SLOW = !SLOW; try { localStorage.setItem('revision-room:slow', SLOW ? '1' : '0'); } catch (e) {} draw(); speak(c.front, c.l); };
+      if (flipped) {
+        $('#got').onclick = function(){ track(c.src, true); q.shift(); known++; flipped = false; draw(); };
+        $('#again').onclick = function(){ track(c.src, false); if (!again[q[0]]) { again[q[0]] = 1; againN++; } q.push(q.shift()); flipped = false; draw(); };
+      }
+    }
+    draw();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Fill the gaps ---------- */
+  function gaps(deck, list){
+    var items = list || sample(deck.items, 10).map(Parser.makeGap), n = items.length, i = 0, right = 0, wrong = [];
+    function draw(){
+      if (i >= n) {
+        return finish('gaps', {big: right + ' / ' + n, sub: t('sentences_ok'), pct: right / n * 100, last: right + '/' + n, save: !list,
+          again: function(){ gaps(deck); }, retry: wrong.length ? function(){ gaps(deck, wrong); } : null});
+      }
+      var it = items[i], blanks = [], k = 0;
+      var html = it.text.split(/\{\{(.+?)\}\}/g).map(function(p, idx){
+        if (idx % 2 === 0) return esc(p);
+        blanks.push(p); k++;
+        return '<input class="gap" type="text" style="width:' + Math.max(4, p.split('|')[0].length + 2) + 'ch" aria-label="' + esc(t('blank', {k: k})) + '" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">';
+      }).join('');
+      app.innerHTML = top(i, n, (i + 1) + ' / ' + n) +
+        '<p class="label">' + esc(it.whole ? t('type_phrase') : t('fill_gap')) + '</p><p class="sentence">' + html + '</p>' +
+        (it.hint ? '<p class="hint">' + esc(it.hint) + '</p>' : '') +
+        '<div id="fb" role="status"></div><div class="row" id="act"><button class="btn primary" id="check">' + esc(t('check')) + '</button></div>';
+      var ins = [].slice.call(app.querySelectorAll('input.gap')), checked = false;
+      if (ins[0]) ins[0].focus();
+      function doCheck(){
+        if (checked) return; checked = true;
+        var ok = true;
+        ins.forEach(function(inp, j){
+          var accepted = blanks[j].split('|').map(norm), good = accepted.indexOf(norm(inp.value)) > -1;
+          inp.readOnly = true; inp.classList.add(good ? 'ok' : 'no');
+          if (!good) { ok = false; inp.insertAdjacentHTML('afterend', '<span class="fix">' + esc(blanks[j].split('|')[0]) + '</span>'); }
+        });
+        track(it.src, ok);
+        if (ok) right++; else wrong.push(it);
+        $('#fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '"><b>' + esc(ok ? t('correct') : t('not_quite')) + '</b> ' + esc(ok ? '' : t('answer_green')) + '</div>';
+        $('#act').innerHTML = '<button class="btn primary" id="next">' + esc(i === n - 1 ? t('see_results') : t('next')) + '</button>';
+        $('#next').onclick = function(){ i++; draw(); };
+        $('#next').focus();
+      }
+      ins.forEach(function(inp){ inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); doCheck(); } }); });
+      $('#check').onclick = doCheck;
+    }
+    draw();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Quiz ---------- */
+  function quiz(deck, list){
+    var items = list || Parser.makeQuiz(deck.items, 10), n = items.length, i = 0, right = 0, wrong = [];
+    function draw(){
+      if (i >= n) {
+        return finish('quiz', {big: right + ' / ' + n, sub: t('questions_ok'), pct: right / n * 100, last: right + '/' + n, save: !list,
+          again: function(){ quiz(deck); }, retry: wrong.length ? function(){ quiz(deck, wrong); } : null});
+      }
+      var it = items[i];
+      var opts = shuffle(it.options.map(function(t, idx){ return {t: t, c: idx === it.answer}; }));
+      app.innerHTML = top(i, n, (i + 1) + ' / ' + n) +
+        '<p class="q">' + esc(it.q) + '</p><div class="opts">' +
+        opts.map(function(o, j){ return '<button class="opt" data-j="' + j + '"><span class="k">' + 'ABCDEF'[j] + '</span><span>' + esc(o.t) + '</span></button>'; }).join('') +
+        '</div><div id="fb" role="status"></div><div class="row" id="act"></div>';
+      [].forEach.call(app.querySelectorAll('.opt'), function(btn){
+        btn.onclick = function(){
+          var ok = opts[+btn.dataset.j].c;
+          [].forEach.call(app.querySelectorAll('.opt'), function(b){
+            var o = opts[+b.dataset.j]; b.disabled = true;
+            if (o.c) b.classList.add('right'); else if (b === btn) b.classList.add('wrong'); else b.classList.add('dim');
+          });
+          track(it.src, ok);
+          if (ok) right++; else wrong.push(it);
+          $('#fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '"><b>' + esc(ok ? t('correct') : t('not_quite')) + '</b> ' + (it.explain ? esc(it.explain) : '') + '</div>';
+          $('#act').innerHTML = '<button class="btn primary" id="next">' + esc(i === n - 1 ? t('see_results') : t('next')) + '</button>';
+          $('#next').onclick = function(){ i++; draw(); };
+          $('#next').focus();
+        };
+      });
+    }
+    draw();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Listening: hear the phrase, type it ---------- */
+  function fold(s){ return norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0451/g, '\u0435'); }
+  function listen(deck, list){
+    var items = list || sample(listenItems(deck), 10), n = items.length, i = 0, right = 0, wrong = [];
+    var ICON = '<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    function draw(){
+      if (!n || i >= n) {
+        return finish('listen', {big: right + ' / ' + n, sub: t('heard_ok'), pct: n ? right / n * 100 : 0, last: right + '/' + n, save: !list,
+          again: function(){ listen(deck); }, retry: wrong.length ? function(){ listen(deck, wrong); } : null});
+      }
+      var it = items[i];
+      app.innerHTML = top(i, n, (i + 1) + ' / ' + n) +
+        '<p class="label">' + esc(t('listen_label')) + '</p>' +
+        '<div class="lwrap"><button class="lspk" id="spk" aria-label="' + esc(t('hear')) + '">' + ICON + '</button></div>' +
+        '<input class="lin" id="lin" type="text" aria-label="' + esc(t('listen_label')) + '" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<p class="hint" id="lhint"></p><div id="fb" role="status"></div><div class="row" id="act"><button class="btn primary" id="check">' + esc(t('check')) + '</button></div>' +
+        '<div class="links"><button class="link small" id="meaning">' + esc(t('show_meaning')) + '</button>' +
+        '<button class="link small" id="slow" aria-pressed="' + SLOW + '">' + esc(SLOW ? t('slow_on') : t('slow_off')) + '</button></div>';
+      var inp = $('#lin'), checked = false;
+      inp.focus();
+      $('#spk').onclick = function(){ speak(it.a, it.l); inp.focus(); };
+      $('#slow').onclick = function(){ SLOW = !SLOW; try { localStorage.setItem('revision-room:slow', SLOW ? '1' : '0'); } catch (e) {} $('#slow').textContent = SLOW ? t('slow_on') : t('slow_off'); $('#slow').setAttribute('aria-pressed', SLOW); speak(it.a, it.l); inp.focus(); };
+      $('#meaning').onclick = function(){ $('#lhint').textContent = it.b; };
+      function doCheck(){
+        if (checked) return; checked = true;
+        var typed = inp.value, spoken = speakable(it.a), plain = it.a.replace(/\([^)]*\)/g, ' ');
+        var exact = [it.a, spoken, plain].some(function(x){ return norm(x) === norm(typed); });
+        var near = !exact && [it.a, spoken, plain].some(function(x){ return fold(x) === fold(typed); });
+        var ok = exact || near;
+        track(it, ok);
+        if (ok) right++; else wrong.push(it);
+        inp.readOnly = true; inp.classList.add(ok ? 'ok' : 'no');
+        $('#fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '"><b>' + esc(ok ? t('correct') : t('not_quite')) + '</b> ' +
+          esc(near ? t('l_accents', {x: it.a}) : ok ? '' : t('l_answer', {x: it.a})) + (ok ? '' : '<br>' + esc(it.b)) + '</div>';
+        $('#act').innerHTML = '<button class="btn primary" id="next">' + esc(i === n - 1 ? t('see_results') : t('next')) + '</button>';
+        $('#next').onclick = function(){ i++; draw(); };
+        $('#next').focus();
+      }
+      inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); if (checked) { i++; draw(); } else doCheck(); } });
+      $('#check').onclick = doCheck;
+      speak(it.a, it.l);
+    }
+    draw();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Matching ---------- */
+  function match(deck){
+    var pairs = sample(deck.items, 12).map(function(p, i){ return {id: i, a: p.a, b: p.b, s: p}; });
+    var size = pairs.length <= 7 ? pairs.length : 6, rounds = [];
+    for (var s = 0; s < pairs.length; s += size) rounds.push(pairs.slice(s, s + size));
+    if (rounds.length > 1 && rounds[rounds.length - 1].length < 3) { var tail = rounds.pop(); rounds[rounds.length - 1] = rounds[rounds.length - 1].concat(tail); }
+    var r = 0, slips = 0, total = pairs.length, doneTotal = 0;
+    function draw(){
+      if (r >= rounds.length) {
+        var pct = total / (total + slips) * 100, s2 = slips === 0 ? t('no_slips') : plural(slips, 'slip');
+        return finish('match', {big: s2, sub: t('pairs_matched', {n: total}), pct: pct, last: s2, again: function(){ match(deck); }});
+      }
+      var round = rounds[r], left = shuffle(round), right = shuffle(round), sel = null, matched = 0;
+      function label(){ return t('round_of', {r: r + 1, m: rounds.length, s: plural(slips, 'slip')}); }
+      app.innerHTML = top(doneTotal, total, label()) +
+        '<p class="label">' + esc(t('match_help')) + '</p><div class="cols">' +
+        '<div class="col">' + left.map(function(p){ return '<button class="chip" data-side="a" data-id="' + p.id + '">' + esc(p.a) + '</button>'; }).join('') + '</div>' +
+        '<div class="col">' + right.map(function(p){ return '<button class="chip" data-side="b" data-id="' + p.id + '">' + esc(p.b) + '</button>'; }).join('') + '</div></div>';
+      [].forEach.call(app.querySelectorAll('.chip'), function(chip){
+        chip.onclick = function(){
+          if (chip.classList.contains('done')) return;
+          var side = chip.dataset.side, id = chip.dataset.id;
+          if (sel && sel.el === chip) { chip.classList.remove('sel'); sel = null; return; }
+          if (sel && sel.side !== side) {
+            if (sel.id === id) {
+              track(pairs[+id].s, true);
+              sel.el.classList.remove('sel'); sel.el.classList.add('done'); chip.classList.add('done');
+              sel = null; matched++; doneTotal++;
+              $('.prog i').style.width = (doneTotal / total * 100) + '%';
+              if (matched === round.length) setTimeout(function(){ r++; draw(); }, 500);
+            } else {
+              slips++; track(pairs[+(side === 'a' ? id : sel.id)].s, false);
+              var other = sel.el; other.classList.remove('sel'); sel = null;
+              other.classList.add('slip'); chip.classList.add('slip');
+              setTimeout(function(){ other.classList.remove('slip'); chip.classList.remove('slip'); }, 420);
+              $('.count').textContent = label();
+            }
+            return;
+          }
+          if (sel) sel.el.classList.remove('sel');
+          chip.classList.add('sel'); sel = {el: chip, side: side, id: id};
+        };
+      });
+    }
+    draw();
+    window.scrollTo(0, 0);
+  }
+
+  loadKeys().then(function(){ library(); checkShared(); }, function(){ library(); checkShared(); });
+  if (IS_PWA && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  if (IS_PWA && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
+})();
+</script>
+</body>
+</html>
